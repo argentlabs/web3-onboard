@@ -1,6 +1,6 @@
 # @web3-onboard/argent
 
-## Wallet module for connecting Argent Wallet SDK to web3-onboard
+## Module for adding "Login with Argent" to web3-onboard
 
 See [Argent Wallet Developer Docs](https://www.argent.xyz)
 
