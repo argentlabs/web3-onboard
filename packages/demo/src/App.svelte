@@ -1,5 +1,6 @@
 <script>
   import Onboard from '@web3-onboard/core'
+  import argentModule from '@web3-onboard/argent'
   import fortmaticModule from '@web3-onboard/fortmatic'
   import gnosisModule from '@web3-onboard/gnosis'
   import injectedModule from '@web3-onboard/injected-wallets'
@@ -60,6 +61,7 @@
     }
   })
 
+  const argent = argentModule()
   const coinbaseWallet = coinbaseModule()
 
   const walletConnect = walletConnectModule()
@@ -99,6 +101,7 @@
 
   const onboard = Onboard({
     wallets: [
+      argent,
       web3auth,
       ledger,
       trezor,
