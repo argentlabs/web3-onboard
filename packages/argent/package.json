@@ -21,7 +21,7 @@
     "typescript": "^4.5.5"
   },
   "dependencies": {
-    "@argent-connect/core": "file:../../../argent-login/packages/core",
+    "@argent/login": "file:../../../argent-login/packages/core",
     "@web3-onboard/common": "^2.1.4-alpha.1"
   }
 }

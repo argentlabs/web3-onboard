@@ -5,11 +5,10 @@ function argent(): WalletInit {
     label: 'Login with Argent',
     getIcon: async () =>
       'https://images.prismic.io/argentwebsite/313db37e-055d-42ee-9476-a92bda64e61d_logo.svg?auto=format%2Ccompress&fit=max&q=50',
-    getInterface: async ({ chains, appMetadata }) => {
+    getInterface: async ({ chains }) => {
       const [chain] = chains
-      const { name, icon } = appMetadata || {}
 
-      const { getEthereumProvider } = await import('@argent-connect/core')
+      const { getEthereumProvider } = await import('@argent/login')
       const { createEIP1193Provider } = await import('@web3-onboard/common')
 
       const ethereumProvider = getEthereumProvider({ 

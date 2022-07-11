@@ -7,7 +7,7 @@
   resolved "https://registry.yarnpkg.com/@apocentre/alias-sampling/-/alias-sampling-0.5.3.tgz#897ff181b48ad7b2bcb4ecf29400214888244f08"
   integrity sha512-7UDWIIF9hIeJqfKXkNIzkVandlwLf1FWTSdrb9iXvOP8oF544JRXQjCbiTmCv2c9n44n/FIWtehhBfNuAx2CZA==
 
-"@argent-connect/core@file:../argent-login/packages/core":
+"@argent/login@file:../argent-login/packages/core":
   version "0.0.1"
   dependencies:
     "@walletconnect/ethereum-provider" "^1.6.5"
