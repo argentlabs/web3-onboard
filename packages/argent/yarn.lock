@@ -2,8 +2,10 @@
 # yarn lockfile v1
 
 
-"@argent-connect/core@file:../../../argent-login/packages/core":
-  version "0.0.1"
+"@argent/login@^0.0.0-alpha.0":
+  version "0.0.0-alpha.0"
+  resolved "https://registry.yarnpkg.com/@argent/login/-/login-0.0.0-alpha.0.tgz#e34a7632b2caeead7d6db922f4c53b7f2816dcd3"
+  integrity sha512-UrqoGPyuv832DCSzB81rgXjNQgVKuNlCfnXUB9rLVOKzPJWWSNIFWQOACRhNNA/KCvO+swvhgBVAx23h8wMkXw==
   dependencies:
     "@walletconnect/ethereum-provider" "^1.6.5"
     detect-browser "^5.2.1"

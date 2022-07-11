@@ -17,11 +17,11 @@
     "type-check": "tsc --noEmit"
   },
   "license": "MIT",
+  "dependencies": {
+    "@argent/login": "^0.0.0-alpha.0",
+    "@web3-onboard/common": "^2.1.4-alpha.1"
+  },
   "devDependencies": {
     "typescript": "^4.5.5"
-  },
-  "dependencies": {
-    "@argent/login": "file:../../../argent-login/packages/core",
-    "@web3-onboard/common": "^2.1.4-alpha.1"
   }
 }
