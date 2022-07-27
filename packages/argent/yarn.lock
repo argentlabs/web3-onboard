@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@argent/login@^0.0.0-alpha.0":
-  version "0.0.0-alpha.0"
-  resolved "https://registry.yarnpkg.com/@argent/login/-/login-0.0.0-alpha.0.tgz#e34a7632b2caeead7d6db922f4c53b7f2816dcd3"
-  integrity sha512-UrqoGPyuv832DCSzB81rgXjNQgVKuNlCfnXUB9rLVOKzPJWWSNIFWQOACRhNNA/KCvO+swvhgBVAx23h8wMkXw==
+"@argent/login@^0.0.0-alpha.5":
+  version "0.0.0-alpha.5"
+  resolved "https://registry.yarnpkg.com/@argent/login/-/login-0.0.0-alpha.5.tgz#7da33304921d6a191c73fe00e3c3971cdefacb8a"
+  integrity sha512-G8DojD0289JhNDcZbYql+ghlV/Tel1VKMUeKRLLDr38NdzgSyzBzfY/KGih87+Zm/QXfKFbOz8OEvhqx3oRFWg==
   dependencies:
     "@walletconnect/ethereum-provider" "^1.6.5"
     detect-browser "^5.2.1"
@@ -684,9 +684,9 @@
     "@types/node" "*"
 
 "@types/node@*":
-  version "18.0.0"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-18.0.0.tgz#67c7b724e1bcdd7a8821ce0d5ee184d3b4dd525a"
-  integrity sha512-cHlGmko4gWLVI27cGJntjs/Sj8th9aYwplmZFwmmgYQQvL5NUsgVJG7OddLvNfLqYS31KFN0s3qlaD9qCaxACA==
+  version "18.0.3"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-18.0.3.tgz#463fc47f13ec0688a33aec75d078a0541a447199"
+  integrity sha512-HzNRZtp4eepNitP+BD6k2L6DROIDG4Q0fm4x+dwfsr6LGmROENnok75VGw40628xf+iR24WeMFcHuuBDUAzzsQ==
 
 "@types/pbkdf2@^3.0.0":
   version "3.1.0"
@@ -894,9 +894,9 @@
     "@walletconnect/window-getters" "^1.0.0"
 
 "@web3-onboard/common@^2.1.4-alpha.1":
-  version "2.1.4-alpha.1"
-  resolved "https://registry.yarnpkg.com/@web3-onboard/common/-/common-2.1.4-alpha.1.tgz#85fd24023589c5f4ba6331efdd6036dbdaebba50"
-  integrity sha512-9OPdB7NsDY0AEEv0Wr3irFHLrlmhzsbvoDlbqNLP8Q4Qg2BltGHGkchSYtx46tdSZnyTwer5hmtpSHBqeaajsw==
+  version "2.1.5"
+  resolved "https://registry.yarnpkg.com/@web3-onboard/common/-/common-2.1.5.tgz#0bcd562853559a551eaa810ba709fb61a8fd7f09"
+  integrity sha512-bY5GYwO1f0lV8i1h//dn4Q0Ol3/vnbFcFCKZ/71GSKtvu859xJi6rBGM4+qgU05Wnrel3qyuUF9e9cEgTAwwWA==
   dependencies:
     "@ethereumjs/common" "2.6.2"
     ethers "5.5.4"
@@ -1383,9 +1383,9 @@ node-fetch@2.6.7:
     whatwg-url "^5.0.0"
 
 node-gyp-build@^4.2.0:
-  version "4.4.0"
-  resolved "https://registry.yarnpkg.com/node-gyp-build/-/node-gyp-build-4.4.0.tgz#42e99687ce87ddeaf3a10b99dc06abc11021f3f4"
-  integrity sha512-amJnQCcgtRVw9SvoebO3BKGESClrfXGCUTX9hSn1OuGQTQBOZmVd0Z0OlecpuRksKvbsUqALE8jls/ErClAPuQ==
+  version "4.5.0"
+  resolved "https://registry.yarnpkg.com/node-gyp-build/-/node-gyp-build-4.5.0.tgz#7a64eefa0b21112f89f58379da128ac177f20e40"
+  integrity sha512-2iGbaQBV+ITgCz76ZEjmhUKAKVf7xfY1sRl4UiKQspfZMH2h06SyhNsnSVy50cwkFQDGLyif6m/6uFXHkOZ6rg==
 
 p-limit@^2.0.0:
   version "2.3.0"
@@ -1496,9 +1496,9 @@ rlp@^2.2.4:
     bn.js "^5.2.0"
 
 rxjs@^7.5.2:
-  version "7.5.5"
-  resolved "https://registry.yarnpkg.com/rxjs/-/rxjs-7.5.5.tgz#2ebad89af0f560f460ad5cc4213219e1f7dd4e9f"
-  integrity sha512-sy+H0pQofO95VDmFLzyaw9xNJU4KTRSwQIGM6+iG3SypAtCiLDzpeG8sJrNCWn2Up9km+KhkvTdbkrdy+yzZdw==
+  version "7.5.6"
+  resolved "https://registry.yarnpkg.com/rxjs/-/rxjs-7.5.6.tgz#0446577557862afd6903517ce7cae79ecb9662bc"
+  integrity sha512-dnyv2/YsXhnm461G+R/Pe5bWP41Nm6LBXEYWI6eiFP4fiwx6WRI/CD0zbdVAudd9xwLEF2IDcKXLHit0FYjUzw==
   dependencies:
     tslib "^2.1.0"
 

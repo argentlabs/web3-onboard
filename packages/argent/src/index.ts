@@ -2,7 +2,7 @@ import type { WalletInit } from '@web3-onboard/common'
 
 function argent(): WalletInit {
   return () => ({
-    label: 'Login with Argent',
+    label: 'Argent',
     getIcon: async () =>
       'https://images.prismic.io/argentwebsite/313db37e-055d-42ee-9476-a92bda64e61d_logo.svg?auto=format%2Ccompress&fit=max&q=50',
     getInterface: async ({ chains }) => {
