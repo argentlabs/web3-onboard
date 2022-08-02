@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@argent/login@^0.0.0-alpha.5":
-  version "0.0.0-alpha.5"
-  resolved "https://registry.yarnpkg.com/@argent/login/-/login-0.0.0-alpha.5.tgz#7da33304921d6a191c73fe00e3c3971cdefacb8a"
-  integrity sha512-G8DojD0289JhNDcZbYql+ghlV/Tel1VKMUeKRLLDr38NdzgSyzBzfY/KGih87+Zm/QXfKFbOz8OEvhqx3oRFWg==
+"@argent/login@^0.0.0-alpha.7":
+  version "0.0.0-alpha.7"
+  resolved "https://registry.yarnpkg.com/@argent/login/-/login-0.0.0-alpha.7.tgz#199a2976a50a7d0370a5ae9044f1853c0538e9fb"
+  integrity sha512-BeJmevUvobPGiQjl80Y0Wxy7efcakurPM4nnM9ozhpMwXlHXrZzkr9x7S6IAUC7Rl2rjYGc3qDttDc/PprgliA==
   dependencies:
     "@walletconnect/ethereum-provider" "^1.6.5"
     detect-browser "^5.2.1"

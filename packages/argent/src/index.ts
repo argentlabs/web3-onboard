@@ -11,7 +11,7 @@ function argent(): WalletInit {
       const { getEthereumProvider } = await import('@argent/login')
       const { createEIP1193Provider } = await import('@web3-onboard/common')
 
-      const ethereumProvider = getEthereumProvider({ 
+      const ethereumProvider = await getEthereumProvider({
         chainId: parseInt(chain.id),
         rpcUrl: chain.rpcUrl,
       })
