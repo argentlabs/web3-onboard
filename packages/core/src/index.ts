@@ -1,31 +1,37 @@
 import { SofiaProRegular } from '@web3-onboard/common'
-import connectWallet from './connect'
-import disconnectWallet from './disconnect'
-import setChain from './chain'
-import { state } from './store'
-import { reset$ } from './streams'
+import connectWallet from './connect.js'
+import disconnectWallet from './disconnect.js'
+import setChain from './chain.js'
+import { state } from './store/index.js'
+import { reset$, wallets$ } from './streams.js'
+import initI18N from './i18n/index.js'
+import App from './views/Index.svelte'
+import type { InitOptions, Notify } from './types.js'
+import { APP_INITIAL_STATE, STORAGE_KEYS } from './constants.js'
+import { configuration, updateConfiguration } from './configuration.js'
+import updateBalances from './update-balances.js'
+import { chainIdToHex, getLocalStore } from './utils.js'
+import { preflightNotifications } from './preflight-notifications.js'
+
 import {
   validateInitOptions,
   validateNotify,
   validateNotifyOptions
-} from './validation'
-import initI18N from './i18n'
-import App from './views/Index.svelte'
-import type { InitOptions, Notify } from './types'
-import { APP_INITIAL_STATE } from './constants'
-import { configuration, updateConfiguration } from './configuration'
+} from './validation.js'
 
 import {
   addChains,
-  setWalletModules,
   updateAccountCenter,
   updateNotify,
   customNotification,
   setLocale,
-  setPrimaryWallet
-} from './store/actions'
-
-import updateBalances from './update-balances'
+  setPrimaryWallet,
+  setWalletModules,
+  updateConnectModal,
+  updateTheme
+} from './store/actions.js'
+import type { PatchedEIP1193Provider } from '@web3-onboard/transaction-preview'
+import { getBlocknativeSdk } from './services.js'
 
 const API = {
   connectWallet,
@@ -39,9 +45,11 @@ const API = {
       setLocale,
       updateNotify,
       customNotification,
+      preflightNotifications,
       updateBalances,
       updateAccountCenter,
-      setPrimaryWallet
+      setPrimaryWallet,
+      updateTheme
     }
   }
 }
@@ -59,8 +67,10 @@ export type {
   CustomNotification,
   Notification,
   Notify,
-  UpdateNotification
-} from './types'
+  UpdateNotification,
+  PreflightNotificationsOptions,
+  Theme
+} from './types.js'
 
 export type { EIP1193Provider } from '@web3-onboard/common'
 
@@ -82,22 +92,39 @@ function init(options: InitOptions): OnboardAPI {
     i18n,
     accountCenter,
     apiKey,
-    notify
+    notify,
+    gas,
+    connect,
+    containerElements,
+    transactionPreview,
+    theme
   } = options
 
-  initI18N(i18n)
-  addChains(chains)
+  if (containerElements) updateConfiguration({ containerElements })
 
   const { device, svelteInstance } = configuration
+
+  if (svelteInstance) {
+    // if already initialized, need to cleanup old instance
+    console.warn('Re-initializing Onboard and resetting back to initial state')
+    reset$.next()
+  }
+
+  initI18N(i18n)
+  addChains(chainIdToHex(chains))
+
+  if (typeof connect !== undefined) {
+    updateConnectModal(connect)
+  }
 
   // update accountCenter
   if (typeof accountCenter !== 'undefined') {
     let accountCenterUpdate
 
-    if (device.type === 'mobile' && accountCenter.mobile) {
+    if (device.type === 'mobile') {
       accountCenterUpdate = {
         ...APP_INITIAL_STATE.accountCenter,
-        ...accountCenter.mobile
+        ...(accountCenter.mobile ? accountCenter.mobile : {})
       }
     } else if (accountCenter.desktop) {
       accountCenterUpdate = {
@@ -105,7 +132,6 @@ function init(options: InitOptions): OnboardAPI {
         ...accountCenter.desktop
       }
     }
-
     updateAccountCenter(accountCenterUpdate)
   }
 
@@ -126,6 +152,7 @@ function init(options: InitOptions): OnboardAPI {
       ) {
         notify.desktop.position = accountCenter.desktop.position
       }
+
       if (
         (!notify.mobile || (notify.mobile && !notify.mobile.position)) &&
         accountCenter &&
@@ -134,6 +161,7 @@ function init(options: InitOptions): OnboardAPI {
       ) {
         notify.mobile.position = accountCenter.mobile.position
       }
+
       let notifyUpdate: Partial<Notify>
 
       if (device.type === 'mobile' && notify.mobile) {
@@ -147,9 +175,7 @@ function init(options: InitOptions): OnboardAPI {
           ...notify.desktop
         }
       }
-      if (!apiKey || !notifyUpdate.enabled) {
-        notifyUpdate.enabled = false
-      }
+
       updateNotify(notifyUpdate)
     } else {
       const error = validateNotify(notify as Notify)
@@ -157,30 +183,18 @@ function init(options: InitOptions): OnboardAPI {
       if (error) {
         throw error
       }
+
       const notifyUpdate: Partial<Notify> = {
         ...APP_INITIAL_STATE.notify,
         ...notify
       }
 
-      if (!apiKey || !notifyUpdate.enabled) {
-        notifyUpdate.enabled = false
-      }
-      console.log(notifyUpdate)
       updateNotify(notifyUpdate)
     }
   } else {
     const notifyUpdate: Partial<Notify> = APP_INITIAL_STATE.notify
 
-    if (!apiKey) {
-      notifyUpdate.enabled = false
-    }
     updateNotify(notifyUpdate)
-  }
-
-  if (svelteInstance) {
-    // if already initialized, need to cleanup old instance
-    console.warn('Re-initializing Onboard and resetting back to initial state')
-    reset$.next()
   }
 
   const app = svelteInstance || mountApp()
@@ -188,10 +202,41 @@ function init(options: InitOptions): OnboardAPI {
   updateConfiguration({
     appMetadata,
     svelteInstance: app,
-    apiKey
+    apiKey,
+    initialWalletInit: wallets,
+    gas,
+    transactionPreview
   })
 
-  setWalletModules(wallets)
+  if (apiKey && transactionPreview) {
+    const getBnSDK = async () => {
+      transactionPreview.init({
+        containerElement: '#w3o-transaction-preview-container',
+        sdk: await getBlocknativeSdk(),
+        apiKey
+      })
+      wallets$.subscribe(wallets => {
+        wallets.forEach(({ provider }) => {
+          transactionPreview.patchProvider(provider as PatchedEIP1193Provider)
+        })
+      })
+    }
+    getBnSDK()
+  }
+
+  theme && updateTheme(theme)
+
+  // handle auto connection of last wallet
+  if (connect && connect.autoConnectLastWallet) {
+    const lastConnectedWallet = getLocalStore(
+      STORAGE_KEYS.LAST_CONNECTED_WALLET
+    )
+
+    lastConnectedWallet &&
+      API.connectWallet({
+        autoSelect: { label: lastConnectedWallet, disableModals: true }
+      })
+  }
 
   return API
 }
@@ -213,6 +258,7 @@ function mountApp() {
   styleEl.innerHTML = `
     ${SofiaProRegular}
   `
+
   document.body.appendChild(styleEl)
 
   // add to DOM
@@ -223,7 +269,7 @@ function mountApp() {
 
   target.innerHTML = `
       <style>
-        :host {  
+        :host {
           /* COLORS */
           --white: white;
           --black: black;
@@ -263,10 +309,10 @@ function mountApp() {
           --warning-500: #ffaf00;
           --warning-600: #cc8c00;
           --warning-700: #664600;
-  
+
           /* FONTS */
           --font-family-normal: Sofia Pro;
-  
+
           --font-size-1: 3rem;
           --font-size-2: 2.25rem;
           --font-size-3: 1.5rem;
@@ -274,12 +320,12 @@ function mountApp() {
           --font-size-5: 1rem;
           --font-size-6: .875rem;
           --font-size-7: .75rem;
-  
+
           --font-line-height-1: 24px;
           --font-line-height-2: 20px;
           --font-line-height-3: 16px;
           --font-line-height-4: 12px;
-  
+
           /* SPACING */
           --spacing-1: 3rem;
           --spacing-2: 2rem;
@@ -288,18 +334,19 @@ function mountApp() {
           --spacing-5: 0.5rem;
           --spacing-6: 0.25rem;
           --spacing-7: 0.125rem;
-  
+
           /* BORDER RADIUS */
-          --border-radius-1: 24px;  
-          --border-radius-2: 20px;  
-          --border-radius-3: 16px;  
-          --border-radius-4: 12px;  
+          --border-radius-1: 24px;
+          --border-radius-2: 20px;
+          --border-radius-3: 16px;
+          --border-radius-4: 12px;
+          --border-radius-5: 8px;
 
           /* SHADOWS */
           --shadow-0: none;
           --shadow-1: 0px 4px 12px rgba(0, 0, 0, 0.1);
           --shadow-2: inset 0px -1px 0px rgba(0, 0, 0, 0.1);
-          --shadow-3: 0px 4px 16px rgba(179, 179, 179, 0.2);
+          --shadow-3: 0px 4px 16px rgba(0, 0, 0, 0.2);
 
           /* MODAL POSITIONING */
           --modal-z-index: 10;
@@ -307,17 +354,24 @@ function mountApp() {
           --modal-right: unset;
           --modal-bottom: unset;
           --modal-left: unset;
-          
+
           /* MODAL STYLES */
           --modal-backdrop: rgba(0, 0, 0, 0.6);
+
         }
       </style>
     `
+  const connectModalContEl = configuration.containerElements.connectModal
 
-  const containerElementQuery = state.get().accountCenter.containerElement || 'body'
+  const containerElementQuery =
+    connectModalContEl || state.get().accountCenter.containerElement || 'body'
+
   const containerElement = document.querySelector(containerElementQuery)
+
   if (!containerElement) {
-    throw new Error(`Element with query ${state.get().accountCenter} does not exist.`)
+    throw new Error(
+      `Element with query ${containerElementQuery} does not exist.`
+    )
   }
 
   containerElement.appendChild(onboard)

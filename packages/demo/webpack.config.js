@@ -8,6 +8,9 @@ const prod = mode === 'production'
 module.exports = {
   entry: './src/main.js',
   resolve: {
+    fallback: {
+      path: require.resolve('path-browserify')
+    },
     alias: {
       svelte: path.dirname(require.resolve('svelte/package.json')),
       assert: 'assert',
@@ -82,5 +85,9 @@ module.exports = {
     static: {
       directory: path.join(__dirname, 'public')
     }
+  },
+  performance: {
+    maxEntrypointSize: 3000000,
+    maxAssetSize: 3000000
   }
 }

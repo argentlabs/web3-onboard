@@ -1,14 +1,13 @@
-import type {
-  ScanAccountsOptions,
-  Account,
-  Asset,
-  Chain,
-  WalletInit
-} from '@web3-onboard/common'
-
+import type { Chain, Platform, WalletInit } from '@web3-onboard/common'
 import type { StaticJsonRpcProvider } from '@ethersproject/providers'
 import type { ETHAccountPath } from '@shapeshiftoss/hdwallet-core'
 import type { KeepKeyHDWallet } from '@shapeshiftoss/hdwallet-keepkey'
+
+import type {
+  ScanAccountsOptions,
+  Account,
+  Asset
+} from '@web3-onboard/hw-common'
 
 const DEFAULT_PATH = `m/44'/60'/0'/0/0`
 
@@ -37,11 +36,20 @@ const errorMessages = {
 
 type ErrorCode = 'busy' | 'pairing'
 
-function keepkey(): WalletInit {
+function keepkey({
+  filter,
+  containerElement
+}: { filter?: Platform[]; containerElement?: string } = {}): WalletInit {
   const getIcon = async () => (await import('./icon.js')).default
 
-  return () => {
+  return ({ device }) => {
     let accounts: Account[] | undefined
+
+    const filtered =
+      Array.isArray(filter) &&
+      (filter.includes(device.type) || filter.includes(device.os.name))
+
+    if (filtered) return null
 
     return {
       label: 'KeepKey',
@@ -59,14 +67,16 @@ function keepkey(): WalletInit {
           HDWalletErrorType
         } = await import('@shapeshiftoss/hdwallet-core')
 
-        const {
-          accountSelect,
-          createEIP1193Provider,
-          ProviderRpcError,
-          entryModal,
-          bigNumberFieldsToStrings,
-          getHardwareWalletProvider
-        } = await import('@web3-onboard/common')
+        const { createEIP1193Provider, ProviderRpcError } = await import(
+          '@web3-onboard/common'
+        )
+
+        const { accountSelect, entryModal } = await import(
+          '@web3-onboard/hw-common'
+        )
+
+        const { bigNumberFieldsToStrings, getHardwareWalletProvider } =
+          await import('@web3-onboard/hw-common')
 
         const { utils } = await import('ethers')
 
@@ -167,37 +177,43 @@ function keepkey(): WalletInit {
           asset: Asset
           provider: StaticJsonRpcProvider
         }) => {
-          let index = getAccountIdx(derivationPath)
-          let zeroBalanceAccounts = 0
-          const accounts = []
+          try {
+            let index = getAccountIdx(derivationPath)
+            let zeroBalanceAccounts = 0
+            const accounts = []
 
-          // Iterates until a 0 balance account is found
-          // Then adds 4 more 0 balance accounts to the array
-          while (zeroBalanceAccounts < 5) {
-            const acc = await getAccount({
-              accountIdx: index,
-              provider,
-              asset
-            })
+            // Iterates until a 0 balance account is found
+            // Then adds 4 more 0 balance accounts to the array
+            while (zeroBalanceAccounts < 5) {
+              const acc = await getAccount({
+                accountIdx: index,
+                provider,
+                asset
+              })
 
-            if (
-              acc &&
-              acc.balance &&
-              acc.balance.value &&
-              acc.balance.value.isZero()
-            ) {
-              zeroBalanceAccounts++
-              accounts.push(acc)
-            } else {
-              accounts.push(acc)
-              // Reset the number of 0 balance accounts
-              zeroBalanceAccounts = 0
+              if (
+                acc &&
+                acc.balance &&
+                acc.balance.value &&
+                acc.balance.value.isZero()
+              ) {
+                zeroBalanceAccounts++
+                accounts.push(acc)
+              } else {
+                accounts.push(acc)
+                // Reset the number of 0 balance accounts
+                zeroBalanceAccounts = 0
+              }
+
+              index++
             }
 
-            index++
+            return accounts
+          } catch (error) {
+            throw new Error(
+              (error as { message: { message: string } }).message.message
+            )
           }
-
-          return accounts
         }
         let ethersProvider: StaticJsonRpcProvider
         const scanAccounts = async ({
@@ -241,7 +257,8 @@ function keepkey(): WalletInit {
             basePaths: DEFAULT_BASE_PATHS,
             assets,
             chains,
-            scanAccounts
+            scanAccounts,
+            containerElement
           })
           if (!accounts) throw new Error('No accounts were found')
           if (accounts.length) {

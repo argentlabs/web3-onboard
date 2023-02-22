@@ -1,5 +1,5 @@
-import { configuration } from './configuration'
-import type { AppState } from './types'
+import { configuration } from './configuration.js'
+import type { AppState } from './types.js'
 
 export const APP_INITIAL_STATE: AppState = {
   wallets: [],
@@ -9,18 +9,30 @@ export const APP_INITIAL_STATE: AppState = {
     enabled: true,
     position: 'topRight',
     expanded: false,
-    containerElement: 'body',
     minimal: configuration.device.type === 'mobile'
   },
   notify: {
     enabled: true,
     transactionHandler: () => {},
-    position: 'topRight'
+    position: 'topRight',
+    replacement: {
+      gasPriceProbability: {
+        speedup: 80,
+        cancel: 95
+      }
+    }
   },
   notifications: [],
-  locale: ''
+  locale: '',
+  connect: {
+    showSidebar: true,
+    disableClose: false
+  }
 }
 
 export const STORAGE_KEYS = {
-  TERMS_AGREEMENT: 'onboard.js:agreement'
+  TERMS_AGREEMENT: 'onboard.js:agreement',
+  LAST_CONNECTED_WALLET: 'onboard.js:last_connected_wallet'
 }
+
+export const MOBILE_WINDOW_WIDTH = 768

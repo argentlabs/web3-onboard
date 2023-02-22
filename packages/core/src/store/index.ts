@@ -1,8 +1,8 @@
 import { BehaviorSubject, Subject, Observable } from 'rxjs'
 import { distinctUntilKeyChanged, pluck, filter } from 'rxjs/operators'
 import { locale } from 'svelte-i18n'
-import { APP_INITIAL_STATE } from '../constants'
-import { notNullish } from '../utils'
+import { APP_INITIAL_STATE } from '../constants.js'
+import { notNullish } from '../utils.js'
 import type { Chain, WalletModule } from '@web3-onboard/common'
 
 import type {
@@ -17,8 +17,9 @@ import type {
   UpdateNotifyAction,
   AddNotificationAction,
   RemoveNotificationAction,
-  UpdateAllWalletsAction
-} from '../types'
+  UpdateAllWalletsAction,
+  UpdateConnectModalAction
+} from '../types.js'
 
 import {
   ADD_CHAINS,
@@ -27,6 +28,7 @@ import {
   REMOVE_WALLET,
   RESET_STORE,
   UPDATE_ACCOUNT,
+  UPDATE_CONNECT_MODAL,
   UPDATE_ACCOUNT_CENTER,
   UPDATE_NOTIFY,
   SET_WALLET_MODULES,
@@ -34,7 +36,7 @@ import {
   ADD_NOTIFICATION,
   REMOVE_NOTIFICATION,
   UPDATE_ALL_WALLETS
-} from './constants'
+} from './constants.js'
 
 function reducer(state: AppState, action: Action): AppState {
   const { type, payload } = action
@@ -115,6 +117,18 @@ function reducer(state: AppState, action: Action): AppState {
       return {
         ...state,
         wallets: updatedWallets
+      }
+    }
+
+    case UPDATE_CONNECT_MODAL: {
+      const update = payload as UpdateConnectModalAction['payload']
+
+      return {
+        ...state,
+        connect: {
+          ...state.connect,
+          ...update
+        }
       }
     }
 

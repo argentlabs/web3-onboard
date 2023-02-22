@@ -3,7 +3,7 @@
   import argentModule from '@web3-onboard/argent'
   import fortmaticModule from '@web3-onboard/fortmatic'
   import gnosisModule from '@web3-onboard/gnosis'
-  import injectedModule from '@web3-onboard/injected-wallets'
+  import injectedModule, { ProviderLabel } from '@web3-onboard/injected-wallets'
   import keepkeyModule from '@web3-onboard/keepkey'
   import keystoneModule from '@web3-onboard/keystone'
   import ledgerModule from '@web3-onboard/ledger'
@@ -14,8 +14,19 @@
   import coinbaseModule from '@web3-onboard/coinbase'
   import magicModule from '@web3-onboard/magic'
   import web3authModule from '@web3-onboard/web3auth'
-
+  import gas from '@web3-onboard/gas'
   import dcentModule from '@web3-onboard/dcent'
+  import sequenceModule from '@web3-onboard/sequence'
+  import tallyHoModule from '@web3-onboard/tallyho'
+  import xdefiWalletModule from '@web3-onboard/xdefi'
+  import zealModule from '@web3-onboard/zeal'
+  import transactionPreviewModule from '@web3-onboard/transaction-preview'
+  import enkryptModule from '@web3-onboard/enkrypt'
+  import mewWalletModule from '@web3-onboard/mew-wallet'
+  import uauthModule from '@web3-onboard/uauth'
+  import phantomModule from '@web3-onboard/phantom'
+  import trustModule from '@web3-onboard/trust'
+  import frontierModule from '@web3-onboard/frontier'
   import {
     recoverAddress,
     arrayify,
@@ -31,6 +42,9 @@
   if (window.innerWidth < 700) {
     new VConsole()
   }
+
+  const apiKey = '7ed5f4aa-fb90-4124-8ef9-f69e3e8e666d'
+  const infura_key = '80633e48116943128cbab25e402764ab'
 
   let defaultTransactionObject = JSON.stringify(
     {
@@ -50,21 +64,55 @@
 
   let transactionObject = defaultTransactionObject
   let signMsg = 'Any string message'
-  let signTypedMsg
 
   const injected = injectedModule({
     custom: [
-      // include custom injected wallet modules here
-    ],
-    filter: {
-      // mapping of wallet label to filter here
-    }
+      // include custom (not natively supported) injected wallet modules here
+    ]
+    // display all wallets even if they are unavailable
+    // displayUnavailable: true
+    // but only show Binance and Bitski wallet if they are available
+    // filter: {
+    //   [ProviderLabel.Binance]: 'unavailable',
+    //   [ProviderLabel.Bitski]: 'unavailable'
+    // }
+    // do a manual sort of injected wallets so that MetaMask and Coinbase are ordered first
+    // sort: wallets => {
+    //   const metaMask = wallets.find(
+    //     ({ label }) => label === ProviderLabel.MetaMask
+    //   )
+    //   const coinbase = wallets.find(
+    //     ({ label }) => label === ProviderLabel.Coinbase
+    //   )
+
+    //   return (
+    //     [
+    //       metaMask,
+    //       coinbase,
+    //       ...wallets.filter(
+    //         ({ label }) =>
+    //           label !== ProviderLabel.MetaMask &&
+    //           label !== ProviderLabel.Coinbase
+    //       )
+    //     ]
+    //       // remove undefined values
+    //       .filter(wallet => wallet)
+    //   )
+    // }
+    // walletUnavailableMessage: wallet => `Oops ${wallet.label} is unavailable!`
   })
 
   const argent = argentModule()
   const coinbaseWallet = coinbaseModule()
 
-  const walletConnect = walletConnectModule()
+  const walletConnect = walletConnectModule({
+    connectFirstChainId: true,
+    version: 2,
+    projectId: 'f6bd6e2911b56f5ac3bc8b2d0e2d7ad5',
+    qrcodeModalOptions: {
+    mobileLinks: ['rainbow', 'metamask', 'argent', 'trust', 'imtoken', 'pillar']
+    }
+  })
   const portis = portisModule({
     apiKey: 'b2b7586f-2b1e-4c30-a7fb-c2d1533b153b'
   })
@@ -83,12 +131,27 @@
   const keepkey = keepkeyModule()
   const keystone = keystoneModule()
   const gnosis = gnosisModule()
+  const tallyho = tallyHoModule()
+  const xdefi = xdefiWalletModule()
+  const zeal = zealModule()
+  const phantom = phantomModule()
+  const trust = trustModule()
+  const frontier = frontierModule()
 
   const trezorOptions = {
     email: 'test@test.com',
     appUrl: 'https://www.blocknative.com'
+    // containerElement: '#sample-container-el'
   }
   const trezor = trezorModule(trezorOptions)
+
+  const uauthOptions = {
+    clientID: 'a25c3a65-a1f2-46cc-a515-a46fe7acb78c',
+    redirectUri: 'http://localhost:8080/',
+    scope:
+      'openid wallet email:optional humanity_check:optional profile:optional social:optional'
+  }
+  const uauth = uauthModule(uauthOptions)
 
   const magic = magicModule({
     apiKey: 'pk_live_02207D744E81C2BA'
@@ -98,49 +161,56 @@
   })
 
   const dcent = dcentModule()
+  const sequence = sequenceModule()
+  const enkrypt = enkryptModule()
+  const mewWallet = mewWalletModule()
+  const transactionPreview = transactionPreviewModule({
+    requireTransactionApproval: true
+  })
 
   const onboard = Onboard({
     wallets: [
       argent,
       web3auth,
+      injected,
       ledger,
       trezor,
       walletConnect,
+      trust,
+      enkrypt,
+      mewWallet,
       keepkey,
       keystone,
       coinbaseWallet,
-      injected,
       magic,
       fortmatic,
       portis,
       torus,
       gnosis,
-      dcent
+      dcent,
+      sequence,
+      tallyho,
+      uauth,
+      web3auth,
+      zeal,
+      frontier,
+      phantom,
+      xdefi
     ],
+    transactionPreview,
+    gas,
     chains: [
       {
         id: '0x1',
         token: 'ETH',
         label: 'Ethereum',
-        rpcUrl: 'https://mainnet.infura.io/v3/17c1e1500e384acfb6a72c5d2e67742e'
+        rpcUrl: `https://mainnet.infura.io/v3/${infura_key}`
       },
       {
-        id: '0x3',
-        token: 'tROP',
-        label: 'Ropsten',
-        rpcUrl: 'https://ropsten.infura.io/v3/17c1e1500e384acfb6a72c5d2e67742e'
-      },
-      {
-        id: '0x4',
-        token: 'rETH',
-        label: 'Rinkeby',
-        rpcUrl: 'https://rinkeby.infura.io/v3/17c1e1500e384acfb6a72c5d2e67742e'
-      },
-      {
-        id: '0x89',
-        token: 'MATIC',
-        label: 'Polygon',
-        rpcUrl: 'https://matic-mainnet.chainstacklabs.com'
+        id: '0x5',
+        token: 'ETH',
+        label: 'Goerli',
+        rpcUrl: `https://goerli.infura.io/v3/${infura_key}`
       },
       {
         id: '0x13881',
@@ -149,16 +219,38 @@
         rpcUrl: 'https://matic-mumbai.chainstacklabs.com	'
       },
       {
-        id: '0xa',
+        id: '0x38',
+        token: 'BNB',
+        label: 'Binance',
+        rpcUrl: 'https://bsc-dataseed.binance.org/'
+      },
+      {
+        id: 137,
+        token: 'MATIC',
+        label: 'Polygon',
+        rpcUrl: 'https://matic-mainnet.chainstacklabs.com'
+      },
+      {
+        id: 10,
         token: 'OETH',
         label: 'Optimism',
         rpcUrl: 'https://mainnet.optimism.io'
+      },
+      {
+        id: 42161,
+        token: 'ARB-ETH',
+        label: 'Arbitrum',
+        rpcUrl: 'https://rpc.ankr.com/arbitrum'
       }
     ],
+    connect: {
+      // disableClose: true,
+      autoConnectLastWallet: true
+    },
     appMetadata: {
       name: 'Blocknative',
-      icon: blocknativeIcon,
-      logo: blocknativeLogo,
+      // icon: blocknativeIcon,
+      // logo: blocknativeLogo,
       description: 'Demo app for Onboard V2',
       recommendedInjectedWallets: [
         { name: 'MetaMask', url: 'https://metamask.io' },
@@ -175,7 +267,7 @@
     // // example customizing account center
     accountCenter: {
       desktop: {
-        position: 'topLeft',
+        position: 'topRight',
         enabled: true,
         minimal: false
       }
@@ -195,17 +287,11 @@
         enabled: true,
         transactionHandler: transaction => {
           console.log({ transaction })
-          //   if (transaction.eventCode === 'txConfirmed') {
-          //     return {
-          //       type: 'error',
-          //       message: 'Your in the pool, hope you brought a towel!',
-          //       autoDismiss: 0,
-          //       id: '123',
-          //       key: '321',
-          //       onClick: () =>
-          //         window.open(`https://rinkeby.etherscan.io/tx/${transaction.hash}`)
-          //     }
-          //   }
+          if (transaction.eventCode === 'txConfirmed') {
+            return {
+              autoDismiss: 0
+            }
+          }
           // if (transaction.eventCode === 'txPool') {
           //   return {
           //     type: 'hint',
@@ -218,12 +304,25 @@
         position: 'topRight'
       }
     },
+    // containerElements: {
+    // // El must be present at time of JS script execution
+    // // See ../public/index.html for element example
+    //   connectModal: '#sample-container-el',
+    //   accountCenter: '#sample-container-el2'
+    // },
     // Sign up for your free api key at www.Blocknative.com
-    apiKey: 'xxxxxx-bf21-42ec-a093-9d37e426xxxx'
+    apiKey,
+    theme: 'system'
   })
 
   // Subscribe to wallet updates
   const wallets$ = onboard.state.select('wallets').pipe(share())
+  wallets$.subscribe(wallet => {
+    const unstoppableUser = wallet.find(
+      provider => provider.label === 'Unstoppable'
+    )
+    if (unstoppableUser) console.log(unstoppableUser.instance.user)
+  })
 
   const signTransactionMessage = async provider => {
     const ethersProvider = new ethers.providers.Web3Provider(provider, 'any')
@@ -244,14 +343,100 @@
 
     const signer = ethersProvider.getSigner()
 
-    const txn = await signer.sendTransaction({
+    const popTransaction = await signer.populateTransaction({
       to: toAddress,
       value: 100000000000000
     })
 
+    const txn = await signer.sendTransaction(popTransaction)
+
     const receipt = await txn.wait()
     console.log(receipt)
   }
+
+  const sendTransactionWithPreFlight = async (provider, balance) => {
+    await onboard.setChain({ chainId: '0x5' })
+
+    const balanceValue = Object.values(balance)[0]
+    const ethersProvider = new ethers.providers.Web3Provider(provider, 'any')
+
+    const signer = ethersProvider.getSigner()
+    const txDetails = {
+      to: toAddress,
+      value: 100000000000000
+    }
+
+    const sendTransaction = () => {
+      return signer.sendTransaction(txDetails).then(tx => tx.hash)
+    }
+
+    const gasPrice = () =>
+      ethersProvider.getGasPrice().then(res => res.toString())
+
+    const estimateGas = () => {
+      return ethersProvider.estimateGas(txDetails).then(res => res.toString())
+    }
+
+    const transactionHash = await onboard.state.actions.preflightNotifications({
+      sendTransaction,
+      gasPrice,
+      estimateGas,
+      balance: balanceValue,
+      txDetails: txDetails
+    })
+
+    console.log(transactionHash)
+  }
+
+
+  const swapTokens = async (provider) => {
+    const ethersProvider = new ethers.providers.Web3Provider(provider, 'any')
+
+const signer = ethersProvider.getSigner()
+
+const addressFrom = '0xc572779D7839B998DF24fc316c89BeD3D450ED13'
+
+const CONTRACT_ADDRESS = '0x7a250d5630b4cf539739df2c5dacb4c659f2488d'
+
+const uniswapV2router_interface = [
+  'function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external returns (uint[] memory amounts)'
+]
+
+const weth = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
+const oneInch = '0x111111111117dc0aa78b770fa6a738034120c302'
+let swapTxData
+const swapContract = new ethers.Contract(
+  CONTRACT_ADDRESS,
+  uniswapV2router_interface
+)
+const tokenAmount = ethers.BigNumber.from(`1000000000000000000`)
+
+const amountOutMin = 0
+const amountOutMinHex = ethers.BigNumber.from(amountOutMin.toString())._hex
+
+const path = [oneInch, weth]
+const deadline = Math.floor(Date.now() / 1000) + 60 * 1 // 1 minutes from the current Unix time
+
+const inputAmountHex = tokenAmount.toHexString()
+
+swapTxData = await swapContract.populateTransaction.swapExactTokensForETH(
+  inputAmountHex,
+  amountOutMinHex,
+  path,
+  addressFrom,
+  deadline
+)
+const uniswapV2Router = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'
+
+const popTransaction = await signer.populateTransaction(swapTxData)
+
+await signer.sendTransaction({
+  ...popTransaction,
+  from: addressFrom,
+  to: uniswapV2Router,
+  value: 0
+})
+}
 
   const signMessage = async (provider, address) => {
     const ethersProvider = new ethers.providers.Web3Provider(provider, 'any')
@@ -274,20 +459,79 @@
     console.log({ signMsg, signature, recoveredAddress, addr })
   }
 
+  let typedMsg = JSON.stringify(
+    {
+      domain: {
+        chainId: '0x5',
+        name: 'Web3-Onboard Test App',
+        verifyingContract: '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC',
+        version: '1'
+      },
+      message: {
+        contents: 'Hello, Bob!',
+        from: {
+          name: 'Cow',
+          wallets: [
+            '0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826',
+            '0xDeaDbeefdEAdbeefdEadbEEFdeadbeEFdEaDbeeF'
+          ]
+        },
+        to: [
+          {
+            name: 'Bob',
+            wallets: [
+              '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB',
+              '0xB0BdaBea57B0BDABeA57b0bdABEA57b0BDabEa57',
+              '0xB0B0b0b0b0b0B000000000000000000000000000'
+            ]
+          }
+        ]
+      },
+      primaryType: 'Message',
+      types: {
+        EIP712Domain: [
+          { name: 'name', type: 'string' },
+          { name: 'version', type: 'string' },
+          { name: 'chainId', type: 'uint256' },
+          { name: 'verifyingContract', type: 'address' }
+        ],
+        Message: [
+          { name: 'from', type: 'Person' },
+          { name: 'to', type: 'Person[]' },
+          { name: 'contents', type: 'string' }
+        ],
+        Person: [
+          { name: 'name', type: 'string' },
+          { name: 'wallets', type: 'address[]' }
+        ]
+      }
+    },
+    undefined,
+    2
+  )
   const signTypedMessage = async (provider, address) => {
-    const data = JSON.parse(signTypedMsg)
+    await onboard.setChain({ chainId: '0x5' })
     const signature = await provider.request({
-      method: 'eth_signTypedData',
-      params: [address, data]
+      method: 'eth_signTypedData_v4',
+      params: [address, typedMsg]
     })
-    const { domain, types, message } = data
+    const { domain, types, message } = JSON.parse(typedMsg)
 
     delete types.EIP712Domain
     console.log(verifyTypedData(domain, types, message, signature))
   }
+
+  const themes = ['system', 'default', 'light', 'dark']
+  let selectedTheme = 'system'
+  const updateTheme = () => {
+    onboard.state.actions.updateTheme(selectedTheme)
+  }
 </script>
 
 <style>
+  main {
+    height: 100%;
+  }
   button {
     width: 14rem;
     margin: 8px;
@@ -338,11 +582,23 @@
 
 <main>
   <div class="cta">
-    <button on:click={() => onboard.connectWallet()}>Connect Wallet</button>
-
+    <button on:click={() => onboard.connectWallet()} id="connectBtn"
+      >Connect Wallet</button
+    >
+    <select bind:value={selectedTheme} on:change={() => updateTheme()}>
+      {#each themes as theme}
+        <option value={theme}>
+          {theme}
+        </option>
+      {/each}
+    </select>
     {#if $wallets$}
-      <button on:click={() => onboard.state.actions.updateBalances()}
-        >Update Wallet Balance</button
+      <button
+        class="updateBalanceBtn"
+        on:click={() => {
+          // Only necessary if a Blocknative API key is not provided and notify is disabled
+          onboard.state.actions.updateBalances()
+        }}>Update Wallet Balance</button
       >
       <div class="notify-chain-container">
         <div class="notify-action-container">
@@ -416,9 +672,8 @@
       </div>
     {/if}
   </div>
-
   {#if $wallets$}
-    {#each $wallets$ as { icon, label, accounts, chains, provider }}
+    {#each $wallets$ as { icon, label, accounts, chains, provider, instance }}
       <div class="connected-wallet">
         <div class="flex-centered" style="width: 10rem;">
           <div style="width: 2rem; height: 2rem">{@html icon}</div>
@@ -427,7 +682,7 @@
 
         <div>Chains: {JSON.stringify(chains, null, 2)}</div>
 
-        {#each accounts as { address, ens, balance }}
+        {#each accounts as { address, ens, uns, balance }}
           <div
             class="account-info"
             style="margin-top: 0.25rem; margin-bottom: 0.25rem; padding: 0.25rem; border: 1px solid gray;"
@@ -443,6 +698,40 @@
             {#if ens}
               <div>ENS Name: {(ens && ens.name) || ''}</div>
             {/if}
+
+            {#if uns}
+              <div>UNS Name: {(uns && uns.name) || ''}</div>
+            {/if}
+
+            {#if label === 'Unstoppable'}
+              <div>Unstoppable Email: {instance.user.email || ''}</div>
+              <div>
+                Unstoppable Humanity: {instance.user.humanity_check_id || ''}
+              </div>
+              <div>Unstoppable Profile: {instance.user.profile || ''}</div>
+            {/if}
+          </div>
+          <div>
+            <input
+              type="text"
+              class="text-input"
+              placeholder="0x..."
+              bind:value={toAddress}
+            />
+            <button on:click={() => swapTokens(provider)}>
+              Send Transaction
+            </button>
+          </div>
+          <div>
+            <input
+              type="text"
+              class="text-input"
+              placeholder="0x..."
+              bind:value={toAddress}
+            />
+            <button on:click={sendTransactionWithPreFlight(provider, balance)}>
+              Send with Preflight Notifications
+            </button>
           </div>
           <div>
             <input
@@ -457,30 +746,15 @@
             </button>
           </div>
           <div>
-            <input
-              id="sign-type-msg-input"
+            <textarea
+              bind:value={typedMsg}
               type="text"
-              class="text-input"
-              placeholder="Typed message..."
-              bind:value={signTypedMsg}
+              class="sign-transaction-textarea"
             />
             <button on:click={signTypedMessage(provider, address)}>
               Sign Typed Message
             </button>
           </div>
-
-          <div>
-            <input
-              type="text"
-              class="text-input"
-              placeholder="0x..."
-              bind:value={toAddress}
-            />
-            <button on:click={sendTransaction(provider)}>
-              Send Transaction
-            </button>
-          </div>
-
           <div class="sign-transaction">
             <textarea
               bind:value={transactionObject}

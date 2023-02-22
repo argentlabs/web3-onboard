@@ -1,6 +1,23 @@
+<a href="https://onboard.blocknative.com/">
+  <img alt="Web3-Onboard UI Components" src="https://github.com/blocknative/web3-onboard/blob/develop/assets/core.svg?raw=true" />
+</a>
+
 # @web3-onboard/core
 
 This is the core package that contains all of the UI and logic to be able to seamlessly connect user's wallets to your app and track the state of those wallets. Onboard no longer contains any wallet specific code, so wallets need to be passed in upon initialization.
+
+## Quick start
+
+Checkout our full library of quick start examples for connecting and interacting with EVM based wallets
+
+- **[React](https://github.com/blocknative/react-demo)**
+- **[Nextjs 13](https://github.com/blocknative/web3-onboard/tree/main/examples/with-nextjs-13)**
+- **[Nextjs](https://github.com/blocknative/web3-onboard/tree/main/examples/with-nextjs)**
+- **[Svelte](https://github.com/blocknative/web3-onboard/tree/main/packages/demo)**
+- **[SvelteKit](https://github.com/blocknative/web3-onboard/tree/main/examples/with-sveltekit)**
+- **[Vite/React](https://github.com/blocknative/web3-onboard/tree/main/examples/with-vite-react)**
+- **[Vue](https://github.com/blocknative/web3-onboard/tree/main/examples/with-vuejs)**
+- **[Vue2](https://github.com/blocknative/web3-onboard/tree/main/examples/with-vuejs-v2)**
 
 ## Installation
 
@@ -10,11 +27,17 @@ Install the core module:
 
 If you would like to support all wallets, then you can install all of the wallet modules:
 
-`npm i @web3-onboard/injected-wallets @web3-onboard/coinbase @web3-onboard/ledger @web3-onboard/trezor @web3-onboard/keepkey @web3-onboard/walletconnect @web3-onboard/web3auth @web3-onboard/torus @web3-onboard/portis @web3-onboard/mew @web3-onboard/gnosis @web3-onboard/magic @web3-onboard/fortmatic @web3-onboard/dcent`
+```bash
+npm i @web3-onboard/coinbase @web3-onboard/fortmatic @web3-onboard/gnosis  @web3-onboard/trust
+@web3-onboard/injected-wallets @web3-onboard/keepkey @web3-onboard/keystone
+@web3-onboard/ledger @web3-onboard/magic @web3-onboard/portis @web3-onboard/torus
+@web3-onboard/trezor @web3-onboard/walletconnect @web3-onboard/web3auth
+@web3-onboard/dcent @web3-onboard/sequence @web3-onboard/enkrypt
+@web3-onboard/mew-wallet @web3-onboard/uauth @web3-onboard/zeal @web3-onboard/frontier
+```
 
 Note:
 
-- MEW wallet currently fails to install on M1 macs
 - All wallet modules (except for `injected-wallets`) require extra dependencies and may require polyfilling the node built in modules for the browser. See the [Build Environments](#build-environments) section for more info
 - **If using React** you may be interested in checking out the React Hooks package here - https://www.npmjs.com/package/@web3-onboard/react
 - **If using Vue** you may be interested in checking out the Vue package here - https://www.npmjs.com/package/@web3-onboard/vue
@@ -24,7 +47,7 @@ Note:
 Onboard needs to be initialized with an options object before the API can be used:
 
 ```typescript
-type InitOptions {
+type InitOptions = {
   wallets: WalletInit[]
   chains: Chain[]
   appMetadata?: AppMetadata
@@ -32,6 +55,18 @@ type InitOptions {
   accountCenter?: AccountCenterOptions
   apiKey?: string
   notify?: Partial<NotifyOptions>
+  connect?: Partial<ConnectModalOptions>
+  gas?: typeof gas
+  /**
+   * Object mapping for W3O components with the key being the component and the value the DOM element to mount the component to. This element must be available at time of package script execution.
+   */
+  containerElements?: Partial<ContainerElements>
+  /**
+   * Custom or predefined theme for Web3Onboard
+   * BuiltInThemes: ['default', 'dark', 'light', 'system']
+   * or customize with a ThemingMap object.
+   */
+  theme?: Theme
 }
 ```
 
@@ -47,7 +82,7 @@ An array of Chains that your app supports:
 type Chain = {
   id: ChainId // hex encoded string, eg '0x1' for Ethereum Mainnet
   namespace?: 'evm' // string indicating chain namespace. Defaults to 'evm' but will allow other chain namespaces in the future
-  rpcUrl: string // used for network requests
+  rpcUrl: string // used for network requests (eg Alchemy or Infura end point)
   label: string // used for display, eg Ethereum Mainnet
   token: TokenSymbol // the native token symbol, eg ETH, BNB, MATIC
   color?: string // the color used to represent the chain and will be used as a background for the icon
@@ -66,8 +101,11 @@ type AppMetadata = {
   name: string
   // SVG icon string, with height or width (whichever is larger) set to 100% or a valid image URL
   // note: if using an emoji make sure to send base64 string
+  // Note: `icon` is displayed on both mobile AND desktop. If `logo`
+  // below is provided then `icon` displays on mobile and `logo` on desktop
   icon: string
   // Optional wide format logo (ie icon and text) to be displayed in the sidebar of connect modal. Defaults to icon if not provided
+  // Note: This will ONLY display on desktop. It is best used with wide format logos. Use `icon` for standard 40x40 icons.
   logo?: string
   // description of app
   description?: string
@@ -85,6 +123,47 @@ type RecommendedInjectedWallets = {
 }
 ```
 
+**`connect`**
+An object that allows for customization of the Connect Modal and accepts the type ConnectModalOptions.
+
+```typescript
+type ConnectModalOptions = {
+  showSidebar?: boolean
+  /**
+   * Disabled close of the connect modal with background click and
+   * hides the close button forcing an action from the connect modal
+   */
+  disableClose?: boolean // defaults to false
+  /**If set to true, the last connected wallet will store in local storage.
+   * Then on init, onboard will try to reconnect to that wallet with
+   * no modals displayed
+   */
+  autoConnectLastWallet?: boolean // defaults to false
+}
+```
+
+**`theme`**
+A string or an object that defines the color theme web3-onboard will render the components.
+Define a custom or predefined theme for Web3Onboard using either:
+
+- BuiltInThemes: ['default', 'dark', 'light', 'system']
+- ThemingMap object to create a totally custom theme
+
+Note: `system` will default to the theme set by the users system.
+
+```typescript
+export type Theme = ThemingMap | BuiltInThemes | 'system'
+export type BuiltInThemes = 'default' | 'dark' | 'light'
+export type ThemingMap = {
+  '--w3o-background-color'?: string
+  '--w3o-foreground-color'?: string
+  '--w3o-text-color'?: string
+  '--w3o-border-color'?: string
+  '--w3o-action-color'?: string
+  '--w3o-border-radius'?: string
+}
+```
+
 **`i18n`**
 An object that defines the display text for different locales. Can also be used to override the default text. To override the default text, pass in a object for the `en` locale.
 
@@ -96,18 +175,44 @@ type i18nOptions = Record<Locale, i18n>
 To see a list of all of the text values that can be internationalized or replaced, check out the [default en file](src/i18n/en.json).
 Onboard is using the [ICU syntax](https://formatjs.io/docs/core-concepts/icu-syntax/) for formatting under the hood.
 
+**`containerElements`**
+An object mapping for W3O components with the key being the DOM element to mount the specified component to.
+This defines the DOM container element for svelte to attach the component.
+
+**NOTE**: containerElement must be a DOM element with a styleSheet property attached and the element must be available on the DOM at the time of component mounting.
+For an example please see containerElement usage [here](https://github.com/blocknative/web3-onboard/blob/8531a73d69365f7d584320f1c4b97a5d90f1c34e/packages/demo/src/App.svelte#L227)
+
+```typescript
+type ContainerElements = {
+  // When attaching the Connect Modal to a container el be aware that the modal was styled to be
+  // mounted through the app to the html body and will respond to screen width rather than container width
+  // This is specifically apparent on mobile so please test thoroughly
+  // Also consider that other DOM elements(specifically Notifications and Account Center) will also
+  // append to this DOM el if enabled and their own containerEl are not defined
+  connectModal?: string
+  // when using the accountCenter with a container el the accountCenter position properties are ignored
+  accountCenter?: string
+}
+```
+
 **`accountCenter`**
 An object that defines whether the account center UI (default and minimal) is enabled and it's position on the screen. Currently the account center is enabled for both desktop and mobile devices.
 
 ```typescript
-export type AccountCenter = {
+type AccountCenter = {
   enabled: boolean
   position?: AccountCenterPosition // default: 'topRight'
   expanded?: boolean // default: true
   minimal?: boolean // enabled by default for mobile
+
+  /**
+   * @deprecated Use top level containerElements property
+   * with the accountCenter prop set to the desired container El
+   */
+  containerElement?: string // defines the DOM container element for svelte to attach
 }
 
-export type AccountCenterOptions = {
+type AccountCenterOptions = {
   desktop: Omit<AccountCenter, 'expanded'>
   mobile: Omit<AccountCenter, 'expanded'>
 }
@@ -133,7 +238,16 @@ The `transactionHandler` can react off any property of the Ethereum TransactionD
 - `Notification.link` - add link to the transaction hash. For instance, a link to the transaction on etherscan
 - `Notification.onClick()` - onClick handler for when user clicks the notification element
 
-Notify can also be styled by using the CSS variables found below. These are setup to allow maximum customization with base styling variables setting the global theme (i.e. `--onboard-grey-600`) along with more precise component level styling variables available (`--notify-onboard-grey-600`) with the latter taking precedent if defined
+Notify can also be styled by using the CSS variables found below. These are setup to allow maximum customization with base styling variables setting the global theme (i.e. `--onboard-grey-600`) along with more precise component level styling variables available (`--notify-onboard-grey-600`) with the latter taking precedent if defined.
+
+Under the following conditions, when a transaction notification is hovered, a dropdown will appear, allowing the user to replace (speedup or cancel) their transaction:
+
+- The [gas](../gas/) module has been passed in to the Web3 Onboard initialization
+- The transaction was initiated on the networks that the gas module can get estimations for (currently Ethereum and Polygon mainnet)
+- The transaction has a pending status (eventCode: 'txPool')
+- The transaction was initiated by a hardware wallet (possibly other wallet types in future as they recognize the `nonce` field)
+
+The replacement gas values can be customized from the defaults by using the `replacement` parameter in the Notify options.
 
 If notifications are enabled the notifications can be handled through onboard app state as seen below.
 
@@ -148,11 +262,11 @@ unsubscribe()
 ```
 
 ```typescript
-export type NotifyOptions = {
+type NotifyOptions = {
   desktop: Notify
   mobile: Notify
 }
-export type Notify = {
+type Notify = {
   enabled: boolean // default: true
   /**
    * Callback that receives all transaction events
@@ -164,19 +278,23 @@ export type Notify = {
     event: EthereumTransactionData
   ) => TransactionHandlerReturn
   position: CommonPositions
+  replacement?: {
+    gasPriceProbability?: {
+      // define the gas price used for speedup based on the probability of getting in to the next block. Default 80
+      speedup?: number
+      // define the gas price used for cancel based on the probability of getting in to the next block. Default 95
+      cancel?: number
+    }
+  }
 }
 
-export type CommonPositions =
-  | 'topRight'
-  | 'bottomRight'
-  | 'bottomLeft'
-  | 'topLeft'
+type CommonPositions = 'topRight' | 'bottomRight' | 'bottomLeft' | 'topLeft'
 
-export type TransactionHandlerReturn = CustomNotification | boolean | void
+type TransactionHandlerReturn = CustomNotification | boolean | void
 
-export type CustomNotification = Partial<Omit<Notification, 'id' | 'startTime'>>
+type CustomNotification = Partial<Omit<Notification, 'id' | 'startTime'>>
 
-export type Notification = {
+type Notification = {
   id: string
   key: string
   type: NotificationType
@@ -189,7 +307,7 @@ export type Notification = {
   onClick?: (event: Event) => void
 }
 
-export type NotificationType = 'pending' | 'success' | 'error' | 'hint'
+type NotificationType = 'pending' | 'success' | 'error' | 'hint'
 
 export declare type Network =
   | 'main'
@@ -223,6 +341,11 @@ import injectedModule from '@web3-onboard/injected-wallets'
 
 const injected = injectedModule()
 
+// Only one RPC endpoint required per chain
+const ETH_MAINNET_RPC = `https://mainnet.infura.io/v3/${INFURA_KEY}` || `https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}`
+const ETH_ROPSTEN_RPC = `https://ropsten.infura.io/v3/${INFURA_ID}` || `https://eth-ropsten.g.alchemy.com/v2/${ALCHEMY_KEY}`
+const ETH_RINKEBY_RPC = `https://rinkeby.infura.io/v3/${INFURA_KEY}` || `https://eth-rinkeby.g.alchemy.com/v2/${ALCHEMY_KEY}`
+
 const onboard = Onboard({
   wallets: [injected],
   chains: [
@@ -230,19 +353,19 @@ const onboard = Onboard({
       id: '0x1',
       token: 'ETH',
       label: 'Ethereum Mainnet',
-      rpcUrl: `https://mainnet.infura.io/v3/${INFURA_ID}`
+      rpcUrl: ETH_MAINNET_RPC
     },
     {
       id: '0x3',
       token: 'tROP',
       label: 'Ethereum Ropsten Testnet',
-      rpcUrl: `https://ropsten.infura.io/v3/${INFURA_ID}`
+      rpcUrl: ETH_ROPSTEN_RPC
     },
     {
       id: '0x4',
       token: 'rETH',
       label: 'Ethereum Rinkeby Testnet',
-      rpcUrl: `https://rinkeby.infura.io/v3/${INFURA_ID}`
+      rpcUrl: ETH_RINKEBY_RPC
     },
     {
       id: '0x38',
@@ -357,45 +480,16 @@ connectWallet()
 
 ### Auto Selecting a Wallet
 
-A common UX pattern is to remember the wallet(s) that a user has previously connected by storing them in localStorage and then automatically selecting them for the user next time they visit your app.
-You could enable this in your app by first syncing the `wallets` array to localStorage:
+A common UX pattern is to remember the last wallet that a user has previously connected by storing it in localStorage and then automatically selecting them for the user next time they visit your app.
+You can enable this in your app by using the `autoConnectLastWallet` parameter when initializing and Onboard will take care of it:
 
 ```javascript
-const walletsSub = onboard.state.select('wallets')
-const { unsubscribe } = walletsSub.subscribe(wallets => {
-  const connectedWallets = wallets.map(({ label }) => label)
-  window.localStorage.setItem(
-    'connectedWallets',
-    JSON.stringify(connectedWallets)
-  )
+const onboard = Onboard({
+  // ... other options
+  connect: {
+    autoConnectLastWallet: true
+  }
 })
-
-// Don't forget to unsubscribe when your app or component un mounts to prevent memory leaks
-// unsubscribe()
-```
-
-Now that you have the most recent wallets connected saved in local storage, you can auto select those wallet(s) when your app loads:
-
-```javascript
-const previouslyConnectedWallets = JSON.parse(
-  window.localStorage.getItem('connectedWallets')
-)
-
-if (previouslyConnectedWallets) {
-  // Connect the most recently connected wallet (first in the array)
-  await onboard.connectWallet({ autoSelect: previouslyConnectedWallets[0] })
-
-  // You can also auto connect "silently" and disable all onboard modals to avoid them flashing on page load
-  await onboard.connectWallet({
-    autoSelect: { label: previouslyConnectedWallets[0], disableModals: true }
-  })
-
-  // OR - loop through and initiate connection for all previously connected wallets
-  // note: This UX might not be great as the user may need to login to each wallet one after the other
-  // for (walletLabel in previouslyConnectedWallets) {
-  //   await onboard.connectWallet({ autoSelect: walletLabel })
-  // }
-}
 ```
 
 ## Disconnecting a Wallet
@@ -456,6 +550,9 @@ type Account = {
     avatar?: string
     contentHash?: string
     getText?: (key: string) => Promise<string | undefined>
+  }
+  uns: {
+    name?: string
   }
   balance: Record<TokenSymbol, string>
 }
@@ -552,7 +649,10 @@ const onboard = Onboard({
       id: '0x1',
       token: 'ETH',
       label: 'Ethereum Mainnet',
-      rpcUrl: `https://mainnet.infura.io/v3/${INFURA_ID}`
+      // Only one RPC required
+      rpcUrl:
+        `https://mainnet.infura.io/v3/${INFURA_KEY}` ||
+        `https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}`
     }
   ]
 })
@@ -637,26 +737,76 @@ setTimeout(
 )
 ```
 
+**`preflightNotifications`**
+Notify can be used to deliver standard notifications along with preflight information by passing a `PreflightNotificationsOptions` object to the `preflightNotifications` action. This will return a a promise that resolves to the transaction hash (if `sendTransaction` resolves the transaction hash and is successful), the internal notification id (if no `sendTransaction` function is provided) or return nothing if an error occurs or `sendTransaction` is not provided or doesn't resolve to a string.
+
+Preflight event types include
+
+- `txRequest` : Alert user there is a transaction request awaiting confirmation by their wallet
+- `txAwaitingApproval` : A previous transaction is awaiting confirmation
+- `txConfirmReminder` : Reminder to confirm a transaction to continue - configurable with the `txApproveReminderTimeout` property; defaults to 15 seconds
+- `nsfFail` : The user has insufficient funds for transaction (requires `gasPrice`, `estimateGas`, `balance`, `txDetails.value`)
+- `txError` : General transaction error (requires `sendTransaction`)
+- `txSendFail` : The user rejected the transaction (requires `sendTransaction`)
+- `txUnderpriced` : The gas price for the transaction is too low (requires `sendTransaction`)
+
+```typescript
+interface PreflightNotificationsOptions {
+  sendTransaction?: () => Promise<string | void>
+  estimateGas?: () => Promise<string>
+  gasPrice?: () => Promise<string>
+  balance?: string | number
+  txDetails?: {
+    value: string | number
+    to?: string
+    from?: string
+  }
+  txApproveReminderTimeout?: number // defaults to 15 seconds if not specified
+}
+```
+
+```typescript
+const balanceValue = Object.values(balance)[0]
+const ethersProvider = new ethers.providers.Web3Provider(provider, 'any')
+
+const signer = ethersProvider.getSigner()
+const txDetails = {
+  to: toAddress,
+  value: 100000000000000
+}
+
+const sendTransaction = () => {
+  return signer.sendTransaction(txDetails).then(tx => tx.hash)
+}
+
+const gasPrice = () => ethersProvider.getGasPrice().then(res => res.toString())
+
+const estimateGas = () => {
+  return ethersProvider.estimateGas(txDetails).then(res => res.toString())
+}
+const transactionHash = await onboard.state.actions.preflightNotifications({
+  sendTransaction,
+  gasPrice,
+  estimateGas,
+  balance: balanceValue,
+  txDetails: txDetails
+})
+console.log(transactionHash)
+```
+
 **`updateAccountCenter`**
 If you need to update your Account Center configuration after initialization, you can call the `updateAccountCenter` function with the new configuration
 
 ```typescript
 onboard.state.actions.updateAccountCenter({
-  desktop: {
-    position: 'topRight',
-    enabled: true,
-    minimal: true
-  },
-  mobile: {
-    position: 'topRight',
-    enabled: true,
-    minimal: true
-  }
+  position: 'topRight',
+  enabled: true,
+  minimal: true
 })
 ```
 
 **`setPrimaryWallet`**
-The primary wallet (first in the list of connected wallets) and primary account (first in the list of connected accounts for a wallet) can be set by using the `setPrimaryWallet` function. The wallet that is to be set needs to be passed in for the first parameter and if you would like to set the primary account, the address of that account also needs to be passed in:
+The primary wallet (first in the list of connected wallets) and primary account (first in the list of connected accounts for a wallet) can be set by using the `setPrimaryWallet` function. The wallet that is set needs to be passed in for the first parameter and if you would like to set the primary account, the address of that account also needs to be passed in:
 
 ```typescript
 // set the second wallet in the wallets array as the primary
@@ -733,13 +883,50 @@ The Onboard styles can customized via [CSS variables](https://developer.mozilla.
   --onboard-warning-600: #cc8c00;
   --onboard-warning-700: #664600;
 
-  /* CUSTOMIZE ACCOUNT CENTER STACK POSITIONING*/
+  /* CUSTOMIZE ACCOUNT CENTER*/
   --account-center-z-index
+  --account-center-position-top
+  --account-center-position-bottom
+  --account-center-position-right
+  --account-center-position-left
+  --account-center-minimized-background
+  --account-center-maximized-upper-background
+  --account-center-maximized-network-section
+  --account-center-maximized-app-info-section
+  --account-center-minimized-address-color
+  --account-center-maximized-address-color
+  --account-center-maximized-account-section-background-hover
+  --account-center-maximized-action-background-hover
+  --account-center-minimized-chain-select-background
+  --account-center-network-selector-color
+  --account-center-maximized-network-selector-color
+  --account-center-minimized-network-selector-color
+  --account-center-app-btn-text-color
+  --account-center-app-btn-background
+  --account-center-app-btn-font-family
+
+  --account-center-border
+  --account-center-box-shadow
+  --account-center-border-radius
+  --account-center-chain-warning
+  --account-center-minimized-balance-color
+  --account-center-minimized-chain-select-background
+
+  --account-center-maximized-network-section-background
+  --account-center-maximized-network-text-color
+  --account-center-maximized-info-section-background-color
+  --account-center-maximized-upper-action-color
+  --account-center-maximized-upper-action-background-hover
+  --account-center-maximized-app-name-color
+  --account-center-maximized-app-info-color
+
+  --account-center-micro-background
 
   /* CUSTOMIZE SECTIONS OF THE CONNECT MODAL */
   --onboard-connect-content-width
   --onboard-connect-content-height
   --onboard-wallet-columns
+  --onboard-connect-sidebar-border-color
   --onboard-connect-sidebar-background
   --onboard-connect-sidebar-color
   --onboard-connect-sidebar-progress-background
@@ -755,10 +942,16 @@ The Onboard styles can customized via [CSS variables](https://developer.mozilla.
   --onboard-wallet-button-background
   --onboard-wallet-button-background-hover
   --onboard-wallet-button-color
+  --onboard-wallet-button-color-hover
   --onboard-wallet-button-border-color
   --onboard-wallet-button-border-radius
   --onboard-wallet-button-box-shadow
+  --onboard-wallet-button-box-shadow-hover
   --onboard-wallet-app-icon-border-color
+
+  /* CUSTOMIZE THE SHARED MODAL */
+  --onboard-modal-background
+  --onboard-modal-color
 
   /* CUSTOMIZE THE CONNECT MODAL */
   --onboard-modal-border-radius
@@ -767,6 +960,8 @@ The Onboard styles can customized via [CSS variables](https://developer.mozilla.
 
   /* CUSTOMIZE THE ACTION REQUIRED MODAL */
   --onboard-action-required-modal-background
+  --onboard-action-required-text-color
+  --onboard-action-required-btn-text-color
 
   /* FONTS */
   --onboard-font-family-normal: Sofia Pro;
@@ -792,6 +987,7 @@ The Onboard styles can customized via [CSS variables](https://developer.mozilla.
   --onboard-border-radius-1: 24px;
   --onboard-border-radius-2: 20px;
   --onboard-border-radius-3: 16px;
+  --onboard-border-radius-4: 12px;
 
   /* SHADOWS */
   --onboard-shadow-0: none;
@@ -849,7 +1045,12 @@ The Onboard styles can customized via [CSS variables](https://developer.mozilla.
   --account-select-modal-margin-4: 1rem;
   --account-select-modal-margin-5: 0.5rem;
 
-  /* notify STYLES */
+  /* NOTIFY STYLES */
+  /* Notify Positioning variables only take effect if Notify is Positioned separate of Account Center */
+  --notify-onboard-container-position-top
+  --notify-onboard-container-position-bottom
+  --notify-onboard-container-position-right
+  --notify-onboard-container-position-left
   --notify-onboard-font-family-normal
   --notify-onboard-font-size-5
   --notify-onboard-gray-300
@@ -861,6 +1062,17 @@ The Onboard styles can customized via [CSS variables](https://developer.mozilla.
   --notify-onboard-primary-100
   --notify-onboard-primary-400
   --notify-onboard-main-padding
+
+  --notify-onboard-z-index
+  --notify-onboard-background
+  --notify-onboard-close-icon-color
+  --notify-onboard-close-icon-hover
+  --notify-onboard-transaction-status-color
+  --notify-onboard-transaction-font-size
+  --notify-onboard-hash-time-font-size
+  --notify-onboard-hash-time-font-line-height
+  --notify-onboard-address-hash-color
+  --notify-onboard-anchor-color
 }
 ```
 
@@ -884,6 +1096,9 @@ Then add the following to your `webpack.config.js` file:
 const webpack = require('webpack')
 
 module.exports = {
+  fallback: {
+    path: require.resolve('path-browserify')
+  },
   resolve: {
     alias: {
       assert: 'assert',
@@ -911,9 +1126,71 @@ module.exports = {
 
 #### If using create-react-app
 
-[CRACO](https://www.npmjs.com/package/@craco/craco) provides an easy way to override webpack config which is obfuscated in Create React App built applications.
+[CRACO](https://www.npmjs.com/package/@craco/craco) provides a way to override webpack config which is obfuscated in Create React App built applications.
 
 The above webpack 5 example can be used in the `craco.config.js` file at the root level in this case.
+
+[React App Rewired](https://www.npmjs.com/package/react-app-rewired) is another option for working with Create React App DApps
+
+Add the following dev dependencies:
+
+`yarn add rollup-plugin-polyfill-node webpack-bundle-analyzer -D`
+
+```javascript
+const webpack = require('webpack')
+const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
+const path = require('path')
+
+module.exports = function override(config) {
+  const fallback = config.resolve.fallback || {}
+  Object.assign(fallback, {
+    assert: require.resolve('assert'),
+    buffer: require.resolve('buffer'),
+    crypto: require.resolve('crypto-browserify'),
+    http: require.resolve('stream-http'),
+    https: require.resolve('https-browserify'),
+    os: require.resolve('os-browserify/browser'),
+    path: require.resolve('path-browserify'),
+    process: require.resolve('process/browser'),
+    stream: require.resolve('stream-browserify'),
+    url: require.resolve('url'),
+    util: require.resolve('util')
+  })
+  config.resolve.fallback = fallback
+  config.resolve.alias = {
+    ...config.resolve.alias,
+    'bn.js': path.resolve(__dirname, 'node_modules/bn.js'),
+    lodash: path.resolve(__dirname, 'node_modules/lodash'),
+    'magic-sdk': path.resolve(
+      __dirname,
+      'node_modules/magic-sdk/dist/cjs/index.js'
+    )
+  }
+  config.plugins = (config.plugins || []).concat([
+    new webpack.ProvidePlugin({
+      process: 'process/browser',
+      Buffer: ['buffer', 'Buffer']
+    }),
+    new webpack.IgnorePlugin({
+      resourceRegExp: /genesisStates\/[a-z]*\.json$/,
+      contextRegExp: /@ethereumjs\/common/
+    }),
+    new BundleAnalyzerPlugin({
+      analyzerMode: 'disabled'
+    })
+  ])
+  config.ignoreWarnings = [/Failed to parse source map/]
+  config.module.rules.push({
+    test: /\.(js|mjs|jsx)$/,
+    enforce: 'pre',
+    loader: require.resolve('source-map-loader'),
+    resolve: {
+      fullySpecified: false
+    }
+  })
+  return config
+}
+```
 
 ### SvelteKit
 
@@ -957,11 +1234,22 @@ const config = {
       },
       build: {
         rollupOptions: {
+          external: ['@web3-onboard/*'],
           plugins: [nodePolyfills({ crypto: true, http: true })]
         },
         commonjsOptions: {
           transformMixedEsModules: true
         }
+      },
+      optimizeDeps: {
+        exclude: ['@ethersproject/hash', 'wrtc', 'http'],
+        include: [
+          '@web3-onboard/core',
+          '@web3-onboard/gas',
+          '@web3-onboard/sequence',
+          'js-sha3',
+          '@ethersproject/bignumber'
+        ]
       }
     }
   }

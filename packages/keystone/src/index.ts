@@ -1,11 +1,11 @@
 import type {
-  Account,
   Chain,
   CustomNetwork,
-  ScanAccountsOptions,
+  Platform,
   WalletInit
 } from '@web3-onboard/common'
 
+import type { Account, ScanAccountsOptions } from '@web3-onboard/hw-common'
 import type { StaticJsonRpcProvider } from '@ethersproject/providers'
 
 const DEFAULT_BASE_PATH = "m/44'/60'/0'/0"
@@ -64,13 +64,25 @@ const generateAccounts = async (
 }
 
 function keystone({
-  customNetwork
+  customNetwork,
+  filter,
+  containerElement
 }: {
   customNetwork?: CustomNetwork
+  filter?: Platform[]
+  containerElement?: string
 } = {}): WalletInit {
   const getIcon = async () => (await import('./icon.js')).default
-  return () => {
+
+  return ({ device }) => {
     let accounts: Account[] | undefined
+
+    const filtered =
+      Array.isArray(filter) &&
+      (filter.includes(device.type) || filter.includes(device.os.name))
+
+    if (filtered) return null
+
     return {
       label: 'Keystone',
       getIcon,
@@ -85,6 +97,7 @@ function keystone({
 
         // Super weird esm issue where the default export is an object with a property default on it
         // if that is the case then we just grab the default value
+        // @ts-ignore
         AirGappedKeyring =
           'default' in AirGappedKeyring
             ? // @ts-ignore
@@ -96,14 +109,17 @@ function keystone({
         )
 
         const {
-          accountSelect,
           createEIP1193Provider,
           ProviderRpcError,
-          ProviderRpcErrorCode,
+          ProviderRpcErrorCode
+        } = await import('@web3-onboard/common')
+
+        const {
+          accountSelect,
           getCommon,
           bigNumberFieldsToStrings,
           getHardwareWalletProvider
-        } = await import('@web3-onboard/common')
+        } = await import('@web3-onboard/hw-common')
 
         const keyring = AirGappedKeyring.getEmptyKeyring()
         await keyring.readKeyring()
@@ -129,7 +145,8 @@ function keystone({
             assets,
             chains,
             scanAccounts,
-            supportsCustomPath: false
+            supportsCustomPath: false,
+            containerElement
           })
 
           if (accounts.length) {

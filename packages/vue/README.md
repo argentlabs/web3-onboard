@@ -1,3 +1,7 @@
+<a href="https://onboard.blocknative.com/">
+  <img alt="Web3-Onboard UI Components" src="https://github.com/blocknative/web3-onboard/blob/develop/assets/core.svg?raw=true" />
+</a>
+
 # @web3-onboard/vue
 
 A collection of composable functions for implementing web3-onboard in to a Vue project; compatible both with Vue 2 + composition-api and Vue 3
@@ -17,8 +21,10 @@ import { init } from '@web3-onboard/vue'
 import injectedModule from '@web3-onboard/injected-wallets'
 
 const injected = injectedModule()
-const infuraKey = '<INFURA_KEY>'
-const rpcUrl = `https://mainnet.infura.io/v3/${infuraKey}`
+
+// Only one RPC endpoint required per chain
+const rpcAPIKey = '<INFURA_KEY>' || '<ALCHEMY_KEY>'
+const rpcUrl = `https://eth-mainnet.g.alchemy.com/v2/${rpcAPIKey}` || `https://mainnet.infura.io/v3/${rpcAPIKey}`
 
 const web3Onboard = init({
   wallets: [injected],

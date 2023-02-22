@@ -8,32 +8,34 @@ import type {
   ChainId,
   Chain,
   WalletInit,
-  WalletModule
+  WalletModule,
+  ChainWithDecimalId
 } from '@web3-onboard/common'
 
-import ethereumIcon from './icons/ethereum'
-import polygonIcon from './icons/polygon'
-import questionIcon from './icons/question'
-import binanceIcon from './icons/binance'
-import fantomIcon from './icons/fantom'
-import optimismIcon from './icons/optimism'
-import avalancheIcon from './icons/avalanche'
-import celoIcon from './icons/celo'
-import gnosisIcon from './icons/gnosis'
-import harmonyOneIcon from './icons/harmony-one'
-import arbitrumIcon from './icons/arbitrum'
-
-import hourglass from './icons/hourglass'
-import checkmark from './icons/checkmark'
-import error from './icons/error'
-import info from './icons/info'
+import {
+  hourglass,
+  gnosisIcon,
+  checkmark,
+  errorIcon,
+  infoIcon,
+  ethereumIcon,
+  polygonIcon,
+  binanceIcon,
+  questionIcon,
+  fantomIcon,
+  optimismIcon,
+  celoIcon,
+  avalancheIcon,
+  harmonyOneIcon,
+  arbitrumIcon
+} from './icons/index.js'
 
 import type {
   ChainStyle,
   ConnectedChain,
   DeviceNotBrowser,
   NotifyEventStyles
-} from './types'
+} from './types.js'
 
 export function getDevice(): Device | DeviceNotBrowser {
   if (typeof window !== 'undefined') {
@@ -79,17 +81,33 @@ export function shortenAddress(add: string): string {
   return `${add.slice(0, 6)}...${add.slice(-4)}`
 }
 
-export function shortenEns(ens: string): string {
-  return ens.length > 11 ? `${ens.slice(0, 4)}...${ens.slice(-6)}` : ens
+export function shortenDomain(domain: string): string {
+  return domain.length > 11
+    ? `${domain.slice(0, 4)}...${domain.slice(-6)}`
+    : domain
 }
 
 export async function copyWalletAddress(text: string): Promise<void> {
   try {
-   const copy = await navigator.clipboard.writeText(text);
-   return copy
+    const copy = await navigator.clipboard.writeText(text)
+    return copy
   } catch (err) {
     console.error('Failed to copy: ', err)
   }
+}
+
+export const toHexString = (val: number | string): string =>
+  typeof val === 'number' ? `0x${val.toString(16)}` : val
+
+export function chainIdToHex(chains: (Chain | ChainWithDecimalId)[]): Chain[] {
+  return chains.map(({ id, ...rest }) => {
+    const hexId = toHexString(id)
+    return { id: hexId, ...rest }
+  })
+}
+
+export function gweiToWeiHex(gwei: number): string {
+  return `0x${(gwei * 1e9).toString(16)}`
 }
 
 export const chainIdToLabel: Record<string, string> = {
@@ -233,12 +251,40 @@ export const defaultNotifyEventStyles: Record<string, NotifyEventStyles> = {
   error: {
     backgroundColor: '#FDB1B11A',
     borderColor: 'var(--onboard-danger-300, var(--danger-300))',
-    eventIcon: error
+    eventIcon: errorIcon
   },
   hint: {
     backgroundColor: 'var(--onboard-gray-500, var(--gray-500))',
     borderColor: 'var(--onboard-gray-500, var(--gray-500))',
     iconColor: 'var(--onboard-gray-100, var(--gray-100))',
-    eventIcon: info
+    eventIcon: infoIcon
+  }
+}
+
+export const wait = (time: number): Promise<void> =>
+  new Promise(resolve => setTimeout(resolve, time))
+
+export function getLocalStore(key: string): string | null {
+  try {
+    const result = localStorage.getItem(key)
+    return result
+  } catch (error) {
+    return null
+  }
+}
+
+export function setLocalStore(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value)
+  } catch (error) {
+    return
+  }
+}
+
+export function delLocalStore(key: string): void {
+  try {
+    localStorage.removeItem(key)
+  } catch (error) {
+    return
   }
 }

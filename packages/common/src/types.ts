@@ -1,7 +1,7 @@
-import type { ethers, BigNumber } from 'ethers'
 import type { ConnectionInfo } from 'ethers/lib/utils'
 import type EventEmitter from 'eventemitter3'
 import type { TypedData as EIP712TypedData } from 'eip-712'
+import type { ethers } from 'ethers'
 export type { TypedData as EIP712TypedData } from 'eip-712'
 
 /**
@@ -75,64 +75,21 @@ export type RequestPatch = {
       }) => Promise<null>)
     | null
 }
-
-// eslint-disable-next-line max-len
-export type AccountSelectAPI = (
-  options: SelectAccountOptions
-) => Promise<Account>
-
-export type SelectAccountOptions = {
-  basePaths: BasePath[] // the paths to display in the base path selector
-  assets: Asset[] // the selectable assets to scan for a balance
-  chains: Chain[] // the selectable chains/networks to scan for balance
-  scanAccounts: ScanAccounts
-  supportsCustomPath?: boolean
-}
-
-export type BasePath = {
-  label: string // eg - Ethereum Ledger Live
-  value: DerivationPath
-}
-
-export type DerivationPath = string // eg - m/44'/60'
-
-export type Asset = {
-  label: string // eg - ETH
-  address?: string // if is a token, address to query contract
-}
-
-export type ScanAccounts = (options: ScanAccountsOptions) => Promise<Account[]>
-
-export type ScanAccountsOptions = {
-  derivationPath: DerivationPath
-  chainId: Chain['id']
-  asset: Asset
-}
-
-export type AccountAddress = string
-
-export type Account = {
-  address: AccountAddress
-  derivationPath: DerivationPath
-  balance: {
-    asset: Asset['label']
-    value: BigNumber
-  }
-}
-
-export type AccountsList = {
-  all: Account[]
-  filtered: Account[]
-}
-
 export interface AppMetadata {
   /* App name */
   name: string
 
-  /* SVG icon string or image url, with height set to 100% */
-  icon: string
+  /* An SVG icon string or image url, with height set to 100% 
+    Note: `icon` is displayed on both mobile AND desktop. If `logo`
+    below is provided then `icon` displays on mobile and `logo` on
+    desktop.
+  */
+  icon?: string
 
-  /* SVG logo (icon and text) string or image url, with width set to 100% */
+  /* SVG logo (icon and text) string or image url, with width set to 100% 
+     Note: This will ONLY display on desktop. It is best used with wide
+     format logos. Use `icon` for standard 40x40 icons.
+  */
   logo?: string
 
   /* Description of app*/
@@ -238,6 +195,8 @@ export type GetInterfaceHelpers = {
 
 export type ChainId = string
 
+export type DecimalChainId = number
+
 export type RpcUrl = string
 
 export type WalletInterface = {
@@ -259,6 +218,8 @@ export interface ProviderMessage {
 export interface ProviderInfo {
   chainId: ChainId
 }
+
+export type AccountAddress = string
 
 /**
  * An array of addresses
@@ -418,7 +379,8 @@ export enum ProviderRpcErrorCode {
   DISCONNECTED = 4900,
   CHAIN_DISCONNECTED = 4901,
   CHAIN_NOT_ADDED = 4902,
-  DOES_NOT_EXIST = -32601
+  DOES_NOT_EXIST = -32601,
+  UNRECOGNIZED_CHAIN_ID = -32603
 }
 
 export interface Chain {
@@ -433,6 +395,8 @@ export interface Chain {
   publicRpcUrl?: string
   blockExplorerUrl?: string
 }
+
+export type ChainWithDecimalId = Omit<Chain, 'id'> & { id: DecimalChainId }
 
 export type TokenSymbol = string // eg ETH
 

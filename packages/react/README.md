@@ -1,3 +1,7 @@
+<a href="https://onboard.blocknative.com/">
+  <img alt="Web3-Onboard UI Components" src="https://github.com/blocknative/web3-onboard/blob/develop/assets/core.svg?raw=true" />
+</a>
+
 # @web3-onboard/react
 
 A collection of React hooks for implementing web3-onboard in to a React project
@@ -25,8 +29,9 @@ const dappId = '1730eff0-9d50-4382-a3fe-89f0d34a2070'
 
 const injected = injectedModule()
 
-const infuraKey = '<INFURA_KEY>'
-const rpcUrl = `https://mainnet.infura.io/v3/${infuraKey}`
+// Only one RPC endpoint required per chain
+const rpcAPIKey = '<INFURA_KEY>' || '<ALCHEMY_KEY>'
+const rpcUrl = `https://eth-mainnet.g.alchemy.com/v2/${rpcAPIKey}` || `https://mainnet.infura.io/v3/${rpcAPIKey}`
 
 // initialize Onboard
 init({
@@ -55,13 +60,54 @@ function App() {
     <div>
       <button
         disabled={connecting}
-        onClick={() => (wallet ? disconnect() : connect())}
+        onClick={() => (wallet ? disconnect(wallet) : connect())}
       >
         {connecting ? 'connecting' : wallet ? 'disconnect' : 'connect'}
       </button>
     </div>
   )
 }
+```
+
+### Using the `Web3OnboardProvider`
+You can use the context provider `Web3OnboardProvider` to better manage global state. Simply wrap the provider around your `App` and
+the initialized web3Onboard instance will be available in all children components. See example below.
+
+```ts
+import { Web3OnboardProvider, init } from '@web3-onboard/react'
+import injectedModule from '@web3-onboard/injected-wallets'
+
+const INFURA_KEY = ''
+
+const ethereumRopsten = {
+  id: '0x3',
+  token: 'rETH',
+  label: 'Ethereum Ropsten',
+  rpcUrl: `https://ropsten.infura.io/v3/${INFURA_KEY}`
+}
+
+const chains = [ethereumRopsten]
+const wallets = [injectedModule()]
+
+const web3Onboard = init({
+  wallets,
+  chains,
+  appMetadata: {
+    name: "Web3-Onboard Demo",
+    icon: '<svg>App Icon</svg>',
+    description: "A demo of Web3-Onboard."
+  }
+})
+
+function MyApp({ Component, pageProps }) {
+  return (
+    <Web3OnboardProvider web3Onboard={web3Onboard}>
+      <Component {...pageProps} />
+    </Web3OnboardProvider>
+  )
+}
+
+export default MyApp
 ```
 
 ## `init`
@@ -77,10 +123,11 @@ import { useConnectWallet } from '@web3-onboard/react'
 
 type UseConnectWallet = (): [
   { wallet: WalletState | null; connecting: boolean },
-  (options: ConnectOptions) => Promise<void>,
-  (wallet: DisconnectOptions) => Promise<void>,
+  (options: ConnectOptions) => Promise<WalletState[]>,
+  (wallet: DisconnectOptions) => Promise<WalletState[]>,
   (addresses?: string[]) => Promise<void>,
-  (wallets: WalletInit[]) => void
+  (wallets: WalletInit[]) => void,
+  (wallet: WalletState, address?: string) => void
 ]
 
 type ConnectOptions = {
@@ -107,11 +154,28 @@ const [
     wallet, // the wallet that has been connected or null if not yet connected
     connecting // boolean indicating if connection is in progress
   },
-  connect, // function to call to initiate user to connect wallet
-  disconnect, // function to call with wallet<DisconnectOptions> to disconnect wallet
+  connect, // function to call to initiate user to connect wallet, returns a list of WalletState objects (connected wallets)
+  disconnect, // function to call with wallet<DisconnectOptions> to disconnect wallet, returns a list of WalletState objects (connected wallets)
   updateBalances, // function to be called with an optional array of wallet addresses connected through Onboard to update balance or empty/no params to update all connected wallets
-  setWalletModules // function to be called with an array of wallet modules to conditionally allow connection of wallet types i.e. setWalletModules([ledger, trezor, injected])
+  setWalletModules, // function to be called with an array of wallet modules to conditionally allow connection of wallet types i.e. setWalletModules([ledger, trezor, injected])
+  setPrimaryWallet // function that can set the primary wallet and/or primary account within that wallet. The wallet that is set needs to be passed in for the first parameter and if you would like to set the primary account, the address of that account also needs to be passed in
 ] = useConnectWallet()
+
+
+```
+**`setPrimaryWallet`**
+The primary wallet (first in the list of connected wallets) and primary account (first in the list of connected accounts for a wallet) can be set by using the `setPrimaryWallet` function. The wallet that is set needs to be passed in for the first parameter and if you would like to set the primary account, the address of that account also needs to be passed in:
+
+```typescript
+// set the second wallet in the wallets array as the primary
+setPrimaryWallet(wallets[1])
+
+// set the second wallet in the wallets array as the primary wallet
+// as well as setting the third account in that wallet as the primary account
+setPrimaryWallet(
+  wallets[1],
+  wallets[1].accounts[2].address
+)
 ```
 
 ## `useSetChain`
@@ -152,17 +216,17 @@ const [
 
 This hook allows the dev to access all notifications if enabled, send custom notifications and update notify <enable/disable & update transactionHandler function>
 **note** requires an API key be added to the initialization, enabled by default if API key exists
+For full Notification documentation please see [Notify section within the `@web3-onboard/core` docs](../core/README.md#options)
 
 ```typescript
-import { useNotifications } from '@web3-onboard/react'
-
 type UseNotifications = (): [
   Notification[],
   (updatedNotification: CustomNotification) => {
     dismiss: () => void
     update: UpdateNotification
   },
-  (update: Partial<Notify>) => void
+  (update: Partial<Notify>) => void,
+  (options: PreflightNotificationsOptions) => Promise<void | string>
 ]
 
 type Notification = {
@@ -209,17 +273,74 @@ type Notify = {
   transactionHandler: (
     event: EthereumTransactionData
   ) => TransactionHandlerReturn
+  /**
+   * Position of notifications that defaults to the same position as the
+   * Account Center (if enabled) of the top right if AC is disabled
+   * and notifications are enabled (enabled by default with API key)
+   */
+  position?: NotificationPosition
+}
+
+type PreflightNotificationsOptions = {
+  sendTransaction?: () => Promise<string | void>
+  estimateGas?: () => Promise<string>
+  gasPrice?: () => Promise<string>
+  balance?: string | number
+  txDetails?: TxDetails
+  txApproveReminderTimeout?: number
+}
+type TxDetails = {
+  value: string | number
+  to?: string
+  from?: string
+}
+```
+
+```typescript
+import { useNotifications } from '@web3-onboard/react'
 
 const [
   notifications, // the list of all notifications that update when notifications are added, updated or removed
   customNotification, // a function that takes a customNotification object and allows custom notifications to be shown to the user, returns an update and dismiss callback
-  updateNotify // a function that takes a Notify object to allow updating of the properties
+  updateNotify, // a function that takes a Notify object to allow updating of the properties
+  preflightNotifications // a function that takes a PreflightNotificationsOption to create preflight notifications
 ] = useNotifications()
 
 // View notifications as they come in if you would like to handle them independent of the notification display
 useEffect(() => {
   console.log(notifications)
 }, [notifications])
+
+const sendTransactionWithPreFlightNotifications = async () => {
+  const balanceValue = Object.values(wallet.accounts[0].balance)[0]
+
+  const signer = provider.getUncheckedSigner()
+
+  const txDetails = {
+    to: toAddress,
+    value: 1000000000000000
+  }
+
+  const sendTransaction = () => {
+    return signer.sendTransaction(txDetails).then(tx => tx.hash)
+  }
+
+  const gasPrice = () => provider.getGasPrice().then(res => res.toString())
+
+  const estimateGas = () => {
+    return provider.estimateGas(txDetails).then(res => res.toString())
+  }
+
+  const transactionHash =
+    await preflightNotifications({
+      sendTransaction,
+      gasPrice,
+      estimateGas,
+      balance: balanceValue,
+      txDetails: txDetails
+    })
+  console.log(transactionHash)
+}
 
 // Custom notification example
 <button
@@ -247,6 +368,14 @@ useEffect(() => {
   }}
 >
   Custom Hint Notification
+</button>
+<button
+  className="bn-demo-button"
+  onClick={async () => {
+    sendTransactionWithPreFlightNotifications()
+  }}
+>
+  Send with In Flight and Pre Flight Notifications
 </button>
 ```
 

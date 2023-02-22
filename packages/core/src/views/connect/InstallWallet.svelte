@@ -1,9 +1,9 @@
 <script lang="ts">
   import { _ } from 'svelte-i18n'
-  import { configuration } from '../../configuration'
+  import { configuration } from '../../configuration.js'
   import en from '../../i18n/en.json'
 
-  import Warning from '../shared/Warning.svelte'
+  import { Warning } from '../shared/index.js'
 
   const { recommendedInjectedWallets, name } = configuration.appMetadata || {}
 </script>

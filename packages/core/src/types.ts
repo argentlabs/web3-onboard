@@ -7,8 +7,12 @@ import type {
   EIP1193Provider,
   WalletModule,
   Chain,
-  TokenSymbol
+  TokenSymbol,
+  ChainWithDecimalId
 } from '@web3-onboard/common'
+
+import type gas from '@web3-onboard/gas'
+import type { TransactionPreviewAPI } from '@web3-onboard/transaction-preview'
 
 import type en from './i18n/en.json'
 import type { EthereumTransactionData, Network } from 'bnc-sdk'
@@ -21,7 +25,7 @@ export interface InitOptions {
   /**
    * The chains that your app works with
    */
-  chains: Chain[]
+  chains: (Chain | ChainWithDecimalId)[]
   /**
    * Additional metadata about your app to be displayed in the Onboard UI
    */
@@ -30,6 +34,10 @@ export interface InitOptions {
    * Define custom copy for the 'en' locale or add locales to i18n your app
    */
   i18n?: i18nOptions
+  /**
+   * Customize the connect modal
+   */
+  connect?: ConnectModalOptions
   /**
    * Customize the account center UI
    */
@@ -43,8 +51,38 @@ export interface InitOptions {
    * Transaction notification options
    */
   notify?: Partial<NotifyOptions> | Partial<Notify>
+  /** Gas module */
+  gas?: typeof gas
+  /**
+   * Object mapping for W3O components with the key being the DOM
+   * element to mount the component to, this defines the DOM container
+   *  element for svelte to attach the component
+   */
+  containerElements?: Partial<ContainerElements>
+  /**
+   * Transaction Preview module
+   */
+  transactionPreview?: TransactionPreviewAPI
+  /**
+   * Custom or predefined theme for Web3Onboard
+   * BuiltInThemes: ['default', 'dark', 'light', 'system']
+   * or customize with a ThemingMap object.
+   */
+  theme?: Theme
 }
 
+export type Theme = ThemingMap | BuiltInThemes | 'system'
+
+export type BuiltInThemes = 'default' | 'dark' | 'light'
+
+export type ThemingMap = {
+  '--w3o-background-color'?: string
+  '--w3o-foreground-color'?: string
+  '--w3o-text-color'?: string
+  '--w3o-border-color'?: string
+  '--w3o-action-color'?: string
+  '--w3o-border-radius'?: string
+}
 export interface ConnectOptions {
   autoSelect?: { label: string; disableModals: boolean }
 }
@@ -85,6 +123,7 @@ export interface WalletState {
 export type Account = {
   address: Address
   ens: Ens | null
+  uns: Uns | null
   balance: Balances | null
 }
 
@@ -95,6 +134,10 @@ export interface Ens {
   avatar: Avatar | null
   contentHash: string | null
   getText: (key: string) => Promise<string | undefined>
+}
+
+export interface Uns {
+  name: string
 }
 
 export type Avatar = {
@@ -112,18 +155,38 @@ export interface AppState {
   locale: Locale
   notify: Notify
   notifications: Notification[]
+  connect: ConnectModalOptions
 }
 
 export type Configuration = {
   svelteInstance: SvelteComponent | null
-  appMetadata: AppMetadata | null
   device: Device | DeviceNotBrowser
-  apiKey: string
+  initialWalletInit: WalletInit[]
+  appMetadata?: AppMetadata | null
+  apiKey?: string
+  gas?: typeof gas
+  containerElements?: ContainerElements
+  transactionPreview?: TransactionPreviewAPI
 }
 
 export type Locale = string
 export type i18nOptions = Record<Locale, i18n>
 export type i18n = typeof en
+
+export type ConnectModalOptions = {
+  showSidebar?: boolean
+  /**
+   * Disabled close of the connect modal with background click and
+   * hides the close button forcing an action from the connect modal
+   * Defaults to false
+   */
+  disableClose?: boolean
+  /**If set to true, the last connected wallet will store in local storage.
+   * Then on init, onboard will try to reconnect to that wallet with
+   * no modals displayed
+   */
+  autoConnectLastWallet?: boolean
+}
 
 export type CommonPositions =
   | 'topRight'
@@ -138,14 +201,34 @@ export type NotificationPosition = CommonPositions
 export type AccountCenter = {
   enabled: boolean
   position?: AccountCenterPosition
-  containerElement?: string
   expanded?: boolean
   minimal?: boolean
+  /**
+   * @deprecated Use top level containerElements property
+   * with the accountCenter prop set to the desired container El
+   */
+  containerElement?: string
 }
 
 export type AccountCenterOptions = {
   desktop: Omit<AccountCenter, 'expanded'>
   mobile: Omit<AccountCenter, 'expanded'>
+}
+
+export type ContainerElements = {
+  /** When attaching the Connect Modal to a container el be aware that
+   * the modal was styled to be mounted through the app to the html body
+   * and will respond to screen width rather than container width
+   * This is specifically apparent on mobile so please test thoroughly
+   * Also consider that other DOM elements(specifically Notifications and
+   * Account Center) will also append to this DOM el if enabled and their
+   * own containerEl are not defined
+   */
+  connectModal?: string
+  /** when using the accountCenter with a container el the accountCenter
+   * position properties are ignored
+   */
+  accountCenter?: string
 }
 
 export type Notify = {
@@ -169,6 +252,12 @@ export type Notify = {
    * and notifications are enabled (enabled by default with API key)
    */
   position?: NotificationPosition
+  replacement?: {
+    gasPriceProbability?: {
+      speedup?: number
+      cancel?: number
+    }
+  }
 }
 
 export type NotifyOptions = {
@@ -208,6 +297,21 @@ export interface UpdateNotification {
   }
 }
 
+export interface PreflightNotificationsOptions {
+  sendTransaction?: () => Promise<string | void>
+  estimateGas?: () => Promise<string>
+  gasPrice?: () => Promise<string>
+  balance?: string | number
+  txDetails?: TxDetails
+  txApproveReminderTimeout?: number
+}
+
+export interface TxDetails {
+  value: string | number
+  to?: string
+  from?: string
+}
+
 // ==== ACTIONS ==== //
 export type Action =
   | AddChainsAction
@@ -223,6 +327,7 @@ export type Action =
   | AddNotificationAction
   | RemoveNotificationAction
   | UpdateAllWalletsAction
+  | UpdateConnectModalAction
 
 export type AddChainsAction = { type: 'add_chains'; payload: Chain[] }
 export type AddWalletAction = { type: 'add_wallet'; payload: WalletState }
@@ -250,6 +355,11 @@ export type UpdateAccountAction = {
 export type UpdateAccountCenterAction = {
   type: 'update_account_center'
   payload: AccountCenter | Partial<AccountCenter>
+}
+
+export type UpdateConnectModalAction = {
+  type: 'update_connect_modal'
+  payload: Partial<ConnectModalOptions>
 }
 
 export type SetWalletModulesAction = {
@@ -299,4 +409,16 @@ export type DeviceNotBrowser = {
   type: null
   os: null
   browser: null
+}
+
+export type WalletPermission = {
+  id: string
+  parentCapability: string
+  invoker: string
+  caveats: {
+    type: string
+    value: string[]
+  }[]
+
+  date: number
 }

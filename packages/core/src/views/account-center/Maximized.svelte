@@ -2,25 +2,23 @@
   import { _ } from 'svelte-i18n'
   import { fly } from 'svelte/transition'
   import { quartOut } from 'svelte/easing'
-  import { wallets$ } from '../../streams'
+  import { wallets$ } from '../../streams.js'
   import en from '../../i18n/en.json'
   import WalletRow from './WalletRow.svelte'
-  import plusCircleIcon from '../../icons/plus-circle'
-  import arrowForwardIcon from '../../icons/arrow-forward'
-  import connect from '../../connect'
-  import disconnect from '../../disconnect'
-  import { state } from '../../store'
-  import WalletAppBadge from '../shared/WalletAppBadge.svelte'
-  import { getDefaultChainStyles, unrecognizedChainStyle } from '../../utils'
-  import SuccessStatusIcon from '../shared/SuccessStatusIcon.svelte'
-  import NetworkBadgeSelector from '../shared/NetworkSelector.svelte'
-  import caretLightIcon from '../../icons/caret-light'
-  import warningIcon from '../../icons/warning'
-  import questionIcon from '../../icons/question'
-  import { updateAccountCenter } from '../../store/actions'
-  import blocknative from '../../icons/blocknative'
+  import plusCircleIcon from '../../icons/plus-circle.js'
+  import arrowForwardIcon from '../../icons/arrow-forward.js'
+  import connect from '../../connect.js'
+  import disconnect from '../../disconnect.js'
+  import { state } from '../../store/index.js'
+  import { getDefaultChainStyles, unrecognizedChainStyle } from '../../utils.js'
+  import { NetworkSelector, SuccessStatusIcon, WalletAppBadge } from '../shared/index.js'
+  import caretLightIcon from '../../icons/caret-light.js'
+  import warningIcon from '../../icons/warning.js'
+  import questionIcon from '../../icons/question.js'
+  import { poweredByBlocknative } from '../../icons/index.js'
+  import { updateAccountCenter } from '../../store/actions.js'
   import DisconnectAllConfirm from './DisconnectAllConfirm.svelte'
-  import { configuration } from '../../configuration'
+  import { configuration } from '../../configuration.js'
 
   function disconnectAllWallets() {
     $wallets$.forEach(({ label }) => disconnect({ label }))
@@ -50,17 +48,27 @@
 
 <style>
   .outer-container {
-    background: var(--onboard-gray-600, var(--gray-600));
-    border-radius: var(--onboard-border-radius-3, var(--border-radius-3));
+    --background-color: var(--w3o-background-color);
+    --text-color: var(--w3o-text-color);
+    --border-color: var(--w3o-border-color, var(--gray-500));
+    --action-color: var(--w3o-action-color, var(--primary-500));
+    --border-radius: var(--w3o-border-radius, 1rem);
+
+    --account-center-network-selector-color: var(--text-color, white);
+
     width: 100%;
-    filter: drop-shadow(0px 4px 16px rgba(178, 178, 178, 0.2));
-    padding: 0 1px 1px 1px;
+    overflow: hidden;
     pointer-events: auto;
+    border: 1px solid transparent;
+    background: var(--account-center-maximized-upper-background, var(--background-color));
+    border-color: var(--border-color);
+    border-radius: var(--account-center-border-radius, var(--border-radius));
   }
 
   .wallets-section {
     width: 100%;
-    border-radius: var(--onboard-border-radius-3, var(--border-radius-3));
+    color: var(--text-color, var(--gray-100));
+    background: var(--background-color, var(--gray-700));
   }
 
   .p5 {
@@ -73,7 +81,7 @@
   }
 
   .actions {
-    color: var(--onboard-primary-400, var(--primary-400));
+    color: var(--account-center-maximized-upper-action-color, var(--action-color));
     padding-left: 2px;
   }
 
@@ -84,7 +92,10 @@
   }
 
   .action-container:hover {
-    background-color: rgba(146, 155, 237, 0.2);
+    background-color: var(
+      --account-center-maximized-upper-action-background-hover,
+      rgba(146, 155, 237, 0.2)
+    );
   }
 
   .plus-icon {
@@ -106,7 +117,10 @@
   }
 
   .background-blue {
-    background: var(--onboard-primary-100, var(--primary-100));
+    background: var(
+      --account-center-maximized-network-section-background,
+      var(--onboard-primary-100, var(--primary-100))
+    );
   }
 
   .background-gray {
@@ -118,8 +132,18 @@
   }
 
   .network-container {
-    border-radius: var(--onboard-border-radius-3, var(--border-radius-3));
-    color: var(--onboard-gray-500, var(--gray-500));
+    background: var(--backround-color);
+    border-top: 1px solid var(--border-color);
+
+    border-radius: var(
+      --account-center-border-radius,
+      var(--onboard-border-radius-3, var(--border-radius-3))
+    );
+
+    color: var(
+      --account-center-maximized-network-text-color,
+      var(--account-center-maximized-network-section, inherit)
+    );
   }
 
   .p5-5 {
@@ -128,6 +152,7 @@
 
   .network-selector-container {
     margin-left: 1rem;
+    width: 100%;
   }
 
   .network-selector-label {
@@ -136,37 +161,40 @@
   }
 
   .app-info-container {
-    background: var(--onboard-white, var(--white));
-    border-radius: 16px;
+    color: var(--text-color, var(--gray-700));
+    background: var(--account-center-maximized-info-section-background-color,
+      var(--account-center-maximized-info-section, var(--background-color, #FFF))
+    );
+    border-top: 1px solid var(--border-color);
+    border-radius: var(--account-center-border-radius, inherit);
     padding: 12px;
   }
 
   .app-name {
+    font-size: 1rem;
     font-weight: 700;
-    font-size: var(--onboard-font-size-5, var(--font-size-5));
-    line-height: var(--onboard-font-line-height-3, var(--font-line-height-3));
-    color: var(--onboard-gray-600, var(--gray-600));
-    margin-bottom: var(--onboard-spacing-5, var(--spacing-5));
-    margin-top: 0;
+    line-height: 1rem;
+    margin-bottom: 0.25rem;
+    color: var(--account-center-maximized-app-name-color, inherit);
   }
 
   .app-description {
+    margin: 0;
     font-size: var(--onboard-font-size-7, var(--font-size-7));
     line-height: var(--onboard-font-line-height-3, var(--font-line-height-3));
-    color: var(--onboard-gray-500, var(--gray-500));
-    margin: 0;
+    color: var(--account-center-maximized-app-info-color, inherit);
   }
 
   .app-info {
     font-size: var(--onboard-font-size-7, var(--font-size-7));
     line-height: var(--onboard-font-line-height-3, var(--font-line-height-3));
-    color: var(--onboard-gray-500, var(--gray-500));
+    color: var(--account-center-maximized-app-info-color, inherit);
   }
   .app-info-heading {
-    color: var(--onboard-gray-600, var(--gray-600));
     font-weight: 700;
     margin-top: var(--onboard-spacing-5, var(--spacing-5));
     margin-bottom: var(--onboard-spacing-7, var(--spacing-7));
+    color: var(--account-center-maximized-app-info-color, inherit);
   }
 
   a {
@@ -182,17 +210,15 @@
   }
 
   .app-button {
+    font-family: var(--account-center-app-btn-font-family, inherit);
     margin-top: var(--onboard-spacing-5, var(--spacing-5));
+    color: var(--account-center-app-btn-text-color, var(--background-color, #FFF));
+    background: var(--account-center-app-btn-background, var(--action-color));
   }
 
   .powered-by-container {
     margin-top: 12px;
-  }
-
-  .powered-by {
-    color: var(--onboard-gray-400, var(--gray-400));
-    font-size: var(--onboard-font-size-7, var(--font-size-7));
-    line-height: var(--onboard-font-line-height-3, var(--font-line-height-3));
+    color: var(--text-color);
   }
 </style>
 
@@ -315,12 +341,13 @@
               default: en.accountCenter.currentNetwork
             })}
           </div>
-          <div on:click class="flex items-center">
-            <NetworkBadgeSelector
+          <div on:click class="flex items-center" style=" width: 100%;">
+            <NetworkSelector
               chains={appChains}
-              color="#33394B"
+              colorVar="--account-center-maximized-network-selector-color"
               bold={true}
               selectIcon={caretLightIcon}
+              parentCSSId="maximized_ac"
             />
           </div>
         </div>
@@ -334,28 +361,21 @@
             <WalletAppBadge
               size={32}
               padding={4}
-              background="transparent"
+              background="white"
               border="black"
               radius={8}
               icon={(appMetadata && appMetadata.icon) || questionIcon}
             />
-
-            <div
-              style="right: -5px; bottom: -5px;"
-              class="drop-shadow absolute"
-            >
-              <SuccessStatusIcon size={14} color="blue" />
-            </div>
           </div>
 
           <div class="ml4">
-            <h4 class="app-name">
+            <div class="app-name">
               {(appMetadata && appMetadata.name) || 'App Name'}
-            </h4>
-            <p class="app-description">
+            </div>
+            <div class="app-description">
               {(appMetadata && appMetadata.description) ||
                 'This app has not added a description.'}
-            </p>
+            </div>
           </div>
         </div>
 
@@ -421,14 +441,7 @@
           rel="noopener noreferrer"
           class="flex justify-center items-center powered-by-container"
         >
-          <span class="powered-by"
-            >{$_('accountCenter.poweredBy', {
-              default: en.accountCenter.poweredBy
-            })}</span
-          >
-          <div class="flex items-center" style="width: 83px; margin-left: 4px;">
-            {@html blocknative}
-          </div>
+          {@html poweredByBlocknative}
         </a>
       </div>
     </div>
