@@ -18,8 +18,8 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@argent/login": "^0.0.0-alpha.7",
-    "@web3-onboard/common": "^2.1.4-alpha.1"
+    "@argent/login": "^0.1.0-alpha.6",
+    "@web3-onboard/common": "^2.2.3"
   },
   "devDependencies": {
     "typescript": "^4.5.5"
