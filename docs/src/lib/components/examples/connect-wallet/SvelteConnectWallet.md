@@ -5,9 +5,9 @@ Import the libraries and any wallets you would like to use. For this example, we
 ```js title="onboard.js"|copy
 import Onboard from '@web3-onboard/core'
 import injectedModule from '@web3-onboard/injected-wallets'
+import infinityWalletModule from '@web3-onboard/infinity-wallet'
 import fortmaticModule from '@web3-onboard/fortmatic'
 import gnosisModule from '@web3-onboard/gnosis'
-import injectedModule from '@web3-onboard/injected-wallets'
 import keepkeyModule from '@web3-onboard/keepkey'
 import keystoneModule from '@web3-onboard/keystone'
 import ledgerModule from '@web3-onboard/ledger'
@@ -20,7 +20,7 @@ import magicModule from '@web3-onboard/magic'
 import web3authModule from '@web3-onboard/web3auth'
 import dcentModule from '@web3-onboard/dcent'
 import sequenceModule from '@web3-onboard/sequence'
-import tallyHoModule from '@web3-onboard/tallyho'
+import tahoModule from '@web3-onboard/taho'
 import trustModule from '@web3-onboard/trust'
 import frontierModule from '@web3-onboard/frontier'
 
@@ -39,12 +39,13 @@ const fortmatic = fortmaticModule({
   apiKey: 'apiKey'
 })
 
+const infinityWallet = infinityWalletModule()
 const ledger = ledgerModule()
 const keystone = keystoneModule()
 const keepkey = keepkeyModule()
 const gnosis = gnosisModule()
 const sequence = sequenceModule()
-const tally = tallyModule()
+const taho = tahoModule() // Previously named Tally Ho wallet
 const trust = trustModule()
 const frontier = frontierModule()
 
@@ -63,10 +64,11 @@ const enkrypt = enkryptModule()
 const mewWallet = mewWalletModule()
 
 const wallets = [
+  infinityWallet,
   keepkey,
   sequence,
   injected,
-  tally,
+  taho,
   ledger,
   coinbase,
   dcent,

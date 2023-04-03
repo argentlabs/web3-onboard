@@ -34,6 +34,10 @@ type WalletConnectOptions = {
     mobileLinks: string[] // set the order and list of mobile linking wallets
   }
   connectFirstChainId?: boolean // if true, connects to the first network chain provided
+  /**
+   * Optional function to handle WalletConnect URI when it becomes available
+   */
+  handleUri?: (uri: string) => Promise<unknown>
 } & (
   | {
       /**
@@ -51,6 +55,13 @@ type WalletConnectOptions = {
        * Defaults to version: 1 - this behavior will be deprecated after the WalletConnect v1 sunset
        */
       version: 2
+      /**
+       * List of Required Chain(s) ID for wallets to support in number format (integer or hex)
+       * Defaults to [1] - Ethereum
+       * The chains defined within the web3-onboard config will define the
+       * optional chains for the WalletConnect module
+       */
+      requiredChains?: number[] | undefined
     }
 )
 ```
@@ -74,7 +85,11 @@ const wcV2InitOptions = {
   /**
    * Project ID associated with [WalletConnect account](https://cloud.walletconnect.com)
    */
-  projectId: 'abc123...'
+  projectId: 'abc123...',
+  /**
+   * Optional function to handle WalletConnect URI when it becomes available
+   */
+  handleUri: (uri) => console.log(uri)
 }
 
 // initialize the module with options
@@ -98,4 +113,5 @@ console.log(connectedWallets)
 ```
 
 ## Build Environments
+
 For build env configurations and setups please see the Build Env section [here](/docs/modules/core#build-environments)

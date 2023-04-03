@@ -28,7 +28,7 @@ Install the core module:
 If you would like to support all wallets, then you can install all of the wallet modules:
 
 ```bash
-npm i @web3-onboard/coinbase @web3-onboard/fortmatic @web3-onboard/gnosis  @web3-onboard/trust
+npm i @web3-onboard/coinbase @web3-onboard/fortmatic @web3-onboard/gnosis @web3-onboard/infinity-wallet @web3-onboard/trust
 @web3-onboard/injected-wallets @web3-onboard/keepkey @web3-onboard/keystone
 @web3-onboard/ledger @web3-onboard/magic @web3-onboard/portis @web3-onboard/torus
 @web3-onboard/trezor @web3-onboard/walletconnect @web3-onboard/web3auth
@@ -48,25 +48,65 @@ Onboard needs to be initialized with an options object before the API can be use
 
 ```typescript
 type InitOptions = {
+  /**
+   * Wallet modules to be initialized and added to wallet selection modal
+   */
   wallets: WalletInit[]
-  chains: Chain[]
+  /**
+   * The chains that your app works with
+   */
+  chains: (Chain | ChainWithDecimalId)[]
+  /**
+   * Additional metadata about your app to be displayed in the Onboard UI
+   */
   appMetadata?: AppMetadata
+  /**
+   * Define custom copy for the 'en' locale or add locales to i18n your app
+   */
   i18n?: i18nOptions
+  /**
+   * Customize the connect modal
+   */
+  connect?: ConnectModalOptions
+  /**
+   * Customize the account center UI
+   */
   accountCenter?: AccountCenterOptions
+  /**
+   * Opt in to Blocknative value add services (transaction updates) by providing
+   * your Blocknative API key, head to https://explorer.blocknative.com/account
+   */
   apiKey?: string
-  notify?: Partial<NotifyOptions>
-  connect?: Partial<ConnectModalOptions>
+  /**
+   * Transaction notification options
+   */
+  notify?: Partial<NotifyOptions> | Partial<Notify>
+  /** Gas module */
   gas?: typeof gas
   /**
-   * Object mapping for W3O components with the key being the component and the value the DOM element to mount the component to. This element must be available at time of package script execution.
+   * Object mapping for W3O components with the key being the DOM
+   * element to mount the component to, this defines the DOM container
+   *  element for svelte to attach the component
    */
   containerElements?: Partial<ContainerElements>
+  /**
+   * Transaction Preview module
+   */
+  transactionPreview?: TransactionPreviewAPI
   /**
    * Custom or predefined theme for Web3Onboard
    * BuiltInThemes: ['default', 'dark', 'light', 'system']
    * or customize with a ThemingMap object.
    */
   theme?: Theme
+  /**
+   * Defaults to False
+   * If set to true the Inter font will not be imported and
+   * instead the default 'sans-serif' font will be used
+   * To define the font used see `--w3o-font-family` prop within
+   * the Theme initialization object or set as css variable
+   */
+  disableFontDownload?: boolean
 }
 ```
 
@@ -82,9 +122,11 @@ An array of Chains that your app supports:
 type Chain = {
   id: ChainId // hex encoded string, eg '0x1' for Ethereum Mainnet
   namespace?: 'evm' // string indicating chain namespace. Defaults to 'evm' but will allow other chain namespaces in the future
-  rpcUrl: string // used for network requests (eg Alchemy or Infura end point)
-  label: string // used for display, eg Ethereum Mainnet
-  token: TokenSymbol // the native token symbol, eg ETH, BNB, MATIC
+  // PLEASE NOTE: Some wallets require an rpcUrl, label, and token for actions such as adding a new chain.
+  // It is recommended to include rpcUrl, label, and token for full functionality.
+  rpcUrl?: string // Recommended to include. Used for network requests (eg Alchemy or Infura end point).
+  label?: string // Recommended to include. Used for display, eg Ethereum Mainnet.
+  token?: TokenSymbol // Recommended to include. The native token symbol, eg ETH, BNB, MATIC.
   color?: string // the color used to represent the chain and will be used as a background for the icon
   icon?: string // the icon to represent the chain
   publicRpcUrl?: string // an optional public RPC used when adding a new chain config to the wallet
@@ -128,17 +170,42 @@ An object that allows for customization of the Connect Modal and accepts the typ
 
 ```typescript
 type ConnectModalOptions = {
+  /**
+   * Display the connect modal sidebar - only applies to desktop views
+   */
   showSidebar?: boolean
   /**
    * Disabled close of the connect modal with background click and
    * hides the close button forcing an action from the connect modal
+   * Defaults to false
    */
-  disableClose?: boolean // defaults to false
-  /**If set to true, the last connected wallet will store in local storage.
-   * Then on init, onboard will try to reconnect to that wallet with
-   * no modals displayed
+  disableClose?: boolean
+  /**
+   * If set to true, the most recently connected wallet will store in
+   * local storage. Then on init, onboard will try to reconnect to
+   * that wallet with no modals displayed
    */
-  autoConnectLastWallet?: boolean // defaults to false
+  autoConnectLastWallet?: boolean
+  /**
+   * If set to true, all previously connected wallets will store in
+   * local storage. Then on init, onboard will try to reconnect to
+   * each wallet with no modals displayed
+   */
+  autoConnectAllPreviousWallet?: boolean
+  /**
+   * Customize the link for the `I don't have a wallet` flow shown on the
+   * select wallet modal.
+   * Defaults to `https://ethereum.org/en/wallets/find-wallet/#main-content`
+   */
+  iDontHaveAWalletLink?: string
+  /**
+   * Define support for Unstoppable Domains resolutions
+   * after a user connects. Similar to ens, uns can be used for users who
+   * have minted an Unstoppable Domain and associated it with their wallet.
+   * ENS resolution takes precedent over UNS
+   * Defaults to false
+   */
+  disableUDResolution?: boolean
 }
 ```
 
@@ -146,8 +213,8 @@ type ConnectModalOptions = {
 A string or an object that defines the color theme web3-onboard will render the components.
 Define a custom or predefined theme for Web3Onboard using either:
 
-- BuiltInThemes: ['default', 'dark', 'light', 'system']
-- ThemingMap object to create a totally custom theme
+- Native themes available: 'default', 'dark', 'light', 'system'
+- `ThemingMap` object to create a totally custom theme - see below for the typing
 
 Note: `system` will default to the theme set by the users system.
 
@@ -156,12 +223,21 @@ export type Theme = ThemingMap | BuiltInThemes | 'system'
 export type BuiltInThemes = 'default' | 'dark' | 'light'
 export type ThemingMap = {
   '--w3o-background-color'?: string
+  '--w3o-font-family'?: string
   '--w3o-foreground-color'?: string
   '--w3o-text-color'?: string
   '--w3o-border-color'?: string
   '--w3o-action-color'?: string
   '--w3o-border-radius'?: string
 }
+```
+
+**`disableFontDownload`**
+If set to `true` the default `Inter` font will not be imported and instead the web based `sans-serif` font will be used if a font is not defined through the `Theme` or exposed css variable.
+To define the font use `--w3o-font-family` prop within the `Theme` initialization object or set as a css variable.
+
+```typescript
+type disableFontDownload = boolean // defaults to false
 ```
 
 **`i18n`**
@@ -343,8 +419,7 @@ const injected = injectedModule()
 
 // Only one RPC endpoint required per chain
 const ETH_MAINNET_RPC = `https://mainnet.infura.io/v3/${INFURA_KEY}` || `https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}`
-const ETH_ROPSTEN_RPC = `https://ropsten.infura.io/v3/${INFURA_ID}` || `https://eth-ropsten.g.alchemy.com/v2/${ALCHEMY_KEY}`
-const ETH_RINKEBY_RPC = `https://rinkeby.infura.io/v3/${INFURA_KEY}` || `https://eth-rinkeby.g.alchemy.com/v2/${ALCHEMY_KEY}`
+const ETH_GOERLI_RPC = `https://goerli.infura.io/v3/${INFURA_ID}` || `https://eth-goerli.g.alchemy.com/v2/${ALCHEMY_KEY}`
 
 const onboard = Onboard({
   wallets: [injected],
@@ -356,16 +431,16 @@ const onboard = Onboard({
       rpcUrl: ETH_MAINNET_RPC
     },
     {
-      id: '0x3',
-      token: 'tROP',
-      label: 'Ethereum Ropsten Testnet',
-      rpcUrl: ETH_ROPSTEN_RPC
+      id: 11155111,
+      token: 'ETH',
+      label: 'Sepolia',
+      rpcUrl: 'https://rpc.sepolia.org/'
     },
     {
-      id: '0x4',
-      token: 'rETH',
-      label: 'Ethereum Rinkeby Testnet',
-      rpcUrl: ETH_RINKEBY_RPC
+      id: '0x5',
+      token: 'ETH',
+      label: 'Goerli',
+      rpcUrl: ETH_GOERLI_RPC
     },
     {
       id: '0x38',
@@ -661,6 +736,68 @@ const onboard = Onboard({
 onboard.state.actions.setWalletModules([ledger, trezor])
 ```
 
+**`updateTheme`**
+An exposed method for updating the theme of web3-onboard. The function accepts `Theme` types (see below)
+
+Available native themes include:
+| | |
+| --- | ----------- |
+| 'default' | a mix of light and dark elements found throughout the web3-onboard components |
+| 'dark' | modern look - easy on the eyes in low-light settings |
+| 'light' | bright and clean look - easier to read in bright environments |
+| 'system' | automatically switch between 'dark' & 'light' based on the user's system settings |
+
+The function also accepts a custom built `ThemingMap` object that contains all or some of the theming variables
+
+Example:
+
+```typescript
+import Onboard from '@web3-onboard/core'
+import injectedModule from '@web3-onboard/injected-wallets'
+
+const injected = injectedModule()
+
+const onboard = Onboard({
+  theme: 'dark',
+  wallets: [injected],
+  chains: [
+    {
+      id: '0x1',
+      token: 'ETH',
+      label: 'Ethereum Mainnet',
+      rpcUrl: `https://mainnet.infura.io/v3/${INFURA_KEY}`
+    }
+  ]
+})
+
+// after initialization you may want to change the theme based on a theme switch within the dapp
+onboard.state.actions.updateTheme('light')
+// or
+const customTheme: ThemingMap = {
+  '--w3o-background-color': '#f0f0f0',
+  '--w3o-foreground-color': '#333',
+  '--w3o-text-color': '#fff',
+  '--w3o-border-color': '#ccc',
+  '--w3o-action-color': '#007bff'
+}
+onboard.state.actions.updateTheme(customTheme)
+```
+
+```typescript
+export type Theme = ThemingMap | BuiltInThemes | 'system'
+
+export type BuiltInThemes = 'default' | 'dark' | 'light'
+
+export type ThemingMap = {
+  '--w3o-background-color'?: string
+  '--w3o-foreground-color'?: string
+  '--w3o-text-color'?: string
+  '--w3o-border-color'?: string
+  '--w3o-action-color'?: string
+  '--w3o-border-radius'?: string
+}
+```
+
 **`updateBalances`**
 You may decide to get updated balances for connected wallets after a user action by calling the `updatedBalances` function, which expects a conditional array of addresses:
 
@@ -768,6 +905,8 @@ interface PreflightNotificationsOptions {
 ```typescript
 const balanceValue = Object.values(balance)[0]
 const ethersProvider = new ethers.providers.Web3Provider(provider, 'any')
+// if using ethers v6 this is:
+// ethersProvider = new ethers.BrowserProvider(wallet.provider, 'any')
 
 const signer = ethersProvider.getSigner()
 const txDetails = {
@@ -830,12 +969,15 @@ type SetChainOptions = {
   chainId: string // hex encoded string
   chainNamespace?: 'evm' // defaults to 'evm' (currently the only valid value, but will add more in future updates)
   wallet?: string // the wallet.label of the wallet to set chain
+  rpcUrl?: string // if chain was instantiated without rpcUrl, include here. Used for network requests
+  token?: string // if chain was instantiated without token, include here. Used for display, eg Ethereum Mainnet
+  label?: string // if chain was instantiated without label, include here. The native token symbol, eg ETH, BNB, MATIC
 }
 
 const success = await onboard.setChain({ chainId: '0x89' })
 ```
 
-The `setChain` methods takes an options object with a `chainId` property hex encoded string for the chain id to switch to. The chain id must be one of the chains that Onboard was initialized with. If the wallet supports programatically adding and switching the chain, then the user will be prompted to do so, if not, then a modal will be displayed indicating to the user that they need to switch chains to continue. The `setChain` method returns a promise that resolves when either the user has confirmed the chain switch, or has dismissed the modal and resolves with a boolean indicating if the switch network was successful or not. The `setChain` method will by default switch the first wallet (the most recently connected) in the `wallets` array. A specific wallet can be targeted by passing in the `wallet.label` in the options object as the `wallet` parameter.
+The `setChain` methods takes an options object with a `chainId` property hex encoded string for the chain id to switch to. The chain id must be one of the chains that Onboard was initialized with. If the wallet supports programatically adding and switching the chain, then the user will be prompted to do so, if not, then a modal will be displayed indicating to the user that they need to switch chains to continue. The `setChain` method returns a promise that resolves when either the user has confirmed the chain switch, or has dismissed the modal and resolves with a boolean indicating if the switch network was successful or not. The `setChain` method will by default switch the first wallet (the most recently connected) in the `wallets` array. A specific wallet can be targeted by passing in the `wallet.label` in the options object as the `wallet` parameter. If a chain was instantiated without an rpcUrl, token, or label, add these options for wallets that require this information for adding a new chain.
 
 ## Custom Styling
 
@@ -964,9 +1106,7 @@ The Onboard styles can customized via [CSS variables](https://developer.mozilla.
   --onboard-action-required-btn-text-color
 
   /* FONTS */
-  --onboard-font-family-normal: Sofia Pro;
-  --onboard-font-family-semibold: Sofia Pro Semibold;
-  --onboard-font-family-light: Sofia Pro Light;
+  --onboard-font-family-normal: Inter;
 
   --onboard-font-size-1: 3rem;
   --onboard-font-size-2: 2.25rem;
@@ -1035,8 +1175,7 @@ The Onboard styles can customized via [CSS variables](https://developer.mozilla.
   --account-select-modal-danger-500: #ff4f4f;
 
   /* FONTS */
-  --account-select-modal-font-family-normal: Sofia Pro;
-  --account-select-modal-font-family-light: Sofia Pro Light;
+  --account-select-modal-font-family-normal: Inter, sans-serif;
   --account-select-modal-font-size-5: 1rem;
   --account-select-modal-font-size-7: .75rem;
   --account-select-modal-font-line-height-1: 24px;
@@ -1258,31 +1397,59 @@ const config = {
 export default config
 ```
 
-### Vite
+### SvelteKit + Vite
+
+Checkout a boilerplate example (here)[https://github.com/blocknative/web3-onboard/tree/develop/examples/with-sveltekit]
 
 Add the following dev dependencies:
 
-`npm i --save-dev rollup-plugin-polyfill-node`
+`yarn add rollup-plugin-polyfill-node -D`
+
+Then add the following to your `svelte.config.js` file:
+
+```javascript
+import adapter from '@sveltejs/adapter-auto'
+import preprocess from 'svelte-preprocess'
+
+/** @type {import('@sveltejs/kit').Config} */
+const config = {
+  // Consult https://github.com/sveltejs/svelte-preprocess
+  // for more information about preprocessors
+  preprocess: preprocess(),
+
+  kit: {
+    adapter: adapter()
+  }
+}
+
+export default config
+```
 
 Then add the following to your `vite.config.js` file:
 
 ```javascript
+import { sveltekit } from '@sveltejs/kit/vite'
+import inject from '@rollup/plugin-inject'
+
+import type { UserConfig } from 'vite'
 import nodePolyfills from 'rollup-plugin-polyfill-node'
 
 const MODE = process.env.NODE_ENV
 const development = MODE === 'development'
 
-export default {
-  // other config options
+/** @type {import('@sveltejs/kit').Config} */
+
+const config: UserConfig = {
   plugins: [
+    sveltekit(),
     development &&
       nodePolyfills({
         include: [
           'node_modules/**/*.js',
-          new RegExp('node_modules/.vite/.*js')
-        ],
-        http: true,
-        crypto: true
+          new RegExp('node_modules/.vite/.*js'),
+          'http',
+          'crypto'
+        ]
       })
   ],
   resolve: {
@@ -1294,11 +1461,129 @@ export default {
   },
   build: {
     rollupOptions: {
-      plugins: [nodePolyfills({ crypto: true, http: true })]
+      external: ['@web3-onboard/*'],
+      plugins: [
+        nodePolyfills({ include: ['crypto', 'http'] }),
+        inject({ Buffer: ['buffer', 'Buffer'] })
+      ]
     },
     commonjsOptions: {
       transformMixedEsModules: true
     }
+  },
+  optimizeDeps: {
+    exclude: ['@ethersproject/hash', 'wrtc', 'http'],
+    include: [
+      '@web3-onboard/core',
+      '@web3-onboard/gas',
+      '@web3-onboard/sequence',
+      'js-sha3',
+      '@ethersproject/bignumber'
+    ],
+    esbuildOptions: {
+      // Node.js global to browser globalThis
+      define: {
+        global: 'globalThis'
+      }
+    }
+  },
+  define: {
+    global: 'window'
+  }
+}
+
+export default config
+```
+
+If an error presents around `window` being undefined remove the `define.global` block.
+Add this to your `app.html`
+
+```html
+<script>
+  var global = global || window
+</script>
+```
+
+##### Buffer polyfill
+
+It seems some component or dependency requires Node's Buffer. To polyfill this, the simplest way I could find was to install the buffer package and include the following in web3-onboard.ts:
+
+```javascript
+import { Buffer } from 'buffer'
+globalThis.Buffer = Buffer
+```
+
+See [this github issue](https://github.com/blocknative/web3-onboard/issues/1568#issuecomment-1463963462) for further troubleshooting
+
+### Vite
+
+Checkout a boilerplate example for Vite-React (here)[https://github.com/blocknative/web3-onboard/tree/develop/examples/with-vite-react]
+
+Add the following dev dependencies:
+
+`npm i --save-dev rollup-plugin-polyfill-node`
+
+Then add the following to your `vite.config.js` file:
+
+```javascript
+import inject from '@rollup/plugin-inject'
+
+import nodePolyfills from 'rollup-plugin-polyfill-node'
+
+const MODE = process.env.NODE_ENV
+const development = MODE === 'development'
+
+export default {
+  // other config options
+  plugins: [
+    sveltekit(),
+    development &&
+      nodePolyfills({
+        include: [
+          'node_modules/**/*.js',
+          new RegExp('node_modules/.vite/.*js'),
+          'http',
+          'crypto'
+        ]
+      })
+  ],
+  resolve: {
+    alias: {
+      crypto: 'crypto-browserify',
+      stream: 'stream-browserify',
+      assert: 'assert'
+    }
+  },
+  build: {
+    rollupOptions: {
+      external: ['@web3-onboard/*'],
+      plugins: [
+        nodePolyfills({ include: ['crypto', 'http'] }),
+        inject({ Buffer: ['buffer', 'Buffer'] })
+      ]
+    },
+    commonjsOptions: {
+      transformMixedEsModules: true
+    }
+  },
+  optimizeDeps: {
+    exclude: ['@ethersproject/hash', 'wrtc', 'http'],
+    include: [
+      '@web3-onboard/core',
+      '@web3-onboard/gas',
+      '@web3-onboard/sequence',
+      'js-sha3',
+      '@ethersproject/bignumber'
+    ],
+    esbuildOptions: {
+      // Node.js global to browser globalThis
+      define: {
+        global: 'globalThis'
+      }
+    }
+  },
+  define: {
+    global: 'window'
   }
 }
 ```
@@ -1312,3 +1597,20 @@ build: {
   standalone: true,
 }
 ```
+
+### Next.js
+
+Checkout a boilerplate example for NextJS v13 (here)[https://github.com/blocknative/web3-onboard/tree/develop/examples/with-nextjs-13]
+
+Checkout a boilerplate example for NextJS (here)[https://github.com/blocknative/web3-onboard/tree/develop/examples/with-nextjs]
+
+## Package Managers
+
+### npm and yarn
+
+Web3-Onboard will work out of the box with `npm` and `yarn` support.
+
+### pnpm
+
+We have had issues reported when using `pnpm` as the package manager when working with web3-onboard.
+As we work to understand this new manager more and the issues around it we recommend using `npm` or `yarn` for now.

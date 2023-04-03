@@ -59,6 +59,8 @@ function App() {
   let ethersProvider
 
   if (wallet) {
+    // if using ethers v6 this is:
+    // ethersProvider = new ethers.BrowserProvider(wallet.provider, 'any')
     ethersProvider = new ethers.providers.Web3Provider(wallet.provider, 'any')
   }
 
@@ -70,6 +72,41 @@ function App() {
     </div>
   )
 }
+```
+
+## Using the `Web3OnboardProvider`
+You can use the context provider `Web3OnboardProvider` to better manage global state. Simply wrap the provider around your `App` and
+the initialized web3Onboard instance will be available in all children components. See example below.
+
+```ts
+import { Web3OnboardProvider, init } from '@web3-onboard/react'
+import injectedModule from '@web3-onboard/injected-wallets'
+const INFURA_KEY = ''
+const ethereumRopsten = {
+  id: '0x3',
+  token: 'rETH',
+  label: 'Ethereum Ropsten',
+  rpcUrl: `https://ropsten.infura.io/v3/${INFURA_KEY}`
+}
+const chains = [ethereumRopsten]
+const wallets = [injectedModule()]
+const web3Onboard = init({
+  wallets,
+  chains,
+  appMetadata: {
+    name: "Web3-Onboard Demo",
+    icon: '<svg>App Icon</svg>',
+    description: "A demo of Web3-Onboard."
+  }
+})
+function MyApp({ Component, pageProps }) {
+  return (
+    <Web3OnboardProvider web3Onboard={web3Onboard}>
+      <Component {...pageProps} />
+    </Web3OnboardProvider>
+  )
+}
+export default MyApp
 ```
 
 ## `init`
@@ -140,7 +177,7 @@ setPrimaryWallet(wallets[1], wallets[1].accounts[2].address)
 
 ## `useSetChain`
 
-This hook allows you to set the chain of a user's connected wallet, keep track of the current chain the user is connected to and the status of setting the chain. Passing in a wallet label will operate on that connected wallet, otherwise it will default to the last connected wallet.
+This hook allows you to set the chain of a user's connected wallet, keep track of the current chain the user is connected to and the status of setting the chain. Passing in a wallet label will operate on that connected wallet, otherwise it will default to the last connected wallet. If a chain was instantiated without an rpcUrl, token, or label, add these options for wallets that require this information for adding a new chain.
 
 ```typescript
 import { useSetChain } from '@web3-onboard/react'
@@ -159,7 +196,13 @@ type UseSetChain = (
 type SetChainOptions = {
   chainId: string
   chainNamespace?: string
-  wallet?: WalletState['label']
+  wallet?: WalletState['label'],
+  // if chain was instantiated without rpcUrl, include here. Used for network requests
+  rpcUrl?: string, 
+  // if chain was instantiated without token, include here. Used for display, eg Ethereum Mainnet
+  label?: string,
+  // if chain was instantiated without label, include here. The native token symbol, eg ETH, BNB, MATIC
+  token?: string,
 }
 
 const [

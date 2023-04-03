@@ -54,8 +54,9 @@ jobs:
       - name: Generate the sitemap
         uses: cicirello/generate-sitemap@v1
         with:
-          path-to-root: docs
-          base-url-path: https://www.onboard.blocknative.com/
+          path-to-root: './docs/build'
+          drop-html-extension: true
+          base-url-path: https://onboard.blocknative.com
         
       - name: Peak at folder contents
         run: ls -al

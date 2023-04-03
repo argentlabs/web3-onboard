@@ -1,14 +1,10 @@
 let onboard
 const getOnboard = async (passedTheme) => {
-  if (!onboard) {
-    const key = 'svelteness::color-scheme'
-    const scheme = localStorage[key]
-    let theme = passedTheme || scheme || 'system'
-    onboard = await intiOnboard(theme)
-    classMutationListener()
-  } else {
-    await onboard.state.actions.updateTheme(passedTheme)
-  }
+  const key = 'svelteness::color-scheme'
+  const scheme = localStorage[key]
+  let theme = passedTheme || scheme
+  classMutationListener()
+  onboard = await intiOnboard(theme)
   return onboard
 }
 
@@ -36,6 +32,7 @@ const intiOnboard = async (theme) => {
   const { default: trezorModule } = await import('@web3-onboard/trezor')
   const { default: ledgerModule } = await import('@web3-onboard/ledger')
   const { default: walletConnectModule } = await import('@web3-onboard/walletconnect')
+  const { default: infinityWalletModule } = await import('@web3-onboard/infinity-wallet')
   const { default: coinbaseModule } = await import('@web3-onboard/coinbase')
   const { default: dcentModule } = await import('@web3-onboard/dcent')
   const { default: portisModule } = await import('@web3-onboard/portis')
@@ -45,19 +42,28 @@ const intiOnboard = async (theme) => {
   const { default: keepkeyModule } = await import('@web3-onboard/keepkey')
   const { default: gnosisModule } = await import('@web3-onboard/gnosis')
   const { default: sequenceModule } = await import('@web3-onboard/sequence')
-  const { default: tallyModule } = await import('@web3-onboard/tallyho')
+  const { default: tahoModule } = await import('@web3-onboard/taho')
   const { default: enkryptModule } = await import('@web3-onboard/enkrypt')
   const { default: mewWalletModule } = await import('@web3-onboard/mew-wallet')
   const { default: torusModule } = await import('@web3-onboard/torus')
   const { default: web3authModule } = await import('@web3-onboard/web3auth')
   const { default: uauthModule } = await import('@web3-onboard/uauth')
   const { default: trustModule } = await import('@web3-onboard/trust')
+  const { default: xdefiModule } = await import('@web3-onboard/xdefi')
   const INFURA_ID = '8b60d52405694345a99bcb82e722e0af'
 
   const injected = injectedModule()
+  const infinityWallet = infinityWalletModule()
   const coinbase = coinbaseModule()
   const dcent = dcentModule()
-  const walletConnect = walletConnectModule()
+  const walletConnect = walletConnectModule({
+    connectFirstChainId: true,
+    version: 2,
+    projectId: 'f6bd6e2911b56f5ac3bc8b2d0e2d7ad5',
+    qrcodeModalOptions: {
+      mobileLinks: ['rainbow', 'metamask', 'argent', 'trust', 'imtoken', 'pillar']
+    }
+  })
   const ledger = ledgerModule()
   const keystone = keystoneModule()
   const keepkey = keepkeyModule()
@@ -65,9 +71,10 @@ const intiOnboard = async (theme) => {
   const sequence = sequenceModule()
   const enkrypt = enkryptModule()
   const mewWallet = mewWalletModule()
-  const tally = tallyModule()
+  const taho = tahoModule()
   const torus = torusModule()
   const trust = trustModule()
+  const xdefi = xdefiModule()
 
   const portis = portisModule({
     apiKey: 'b2b7586f-2b1e-4c30-a7fb-c2d1533b153b'
@@ -109,10 +116,12 @@ const intiOnboard = async (theme) => {
       trust,
       gnosis,
       uauth,
-      tally,
+      taho,
+      xdefi,
       torus,
       sequence,
       web3auth,
+      infinityWallet,
       dcent,
       enkrypt,
       mewWallet,
@@ -134,6 +143,12 @@ const intiOnboard = async (theme) => {
         token: 'ETH',
         label: 'Goerli',
         rpcUrl: `https://goerli.infura.io/v3/${INFURA_ID}`
+      },
+      {
+        id: 11155111,
+        token: 'ETH',
+        label: 'Sepolia',
+        rpcUrl: 'https://rpc.sepolia.org/'
       },
       {
         id: '0x13881',
@@ -170,6 +185,12 @@ const intiOnboard = async (theme) => {
         token: 'ARB-ETH',
         label: 'Arbitrum',
         rpcUrl: 'https://rpc.ankr.com/arbitrum'
+      },
+      {
+        id: 84531,
+        token: 'ETH',
+        label: 'Base Goerli',
+        rpcUrl: 'https://goerli.base.org'
       }
     ],
     appMetadata: {

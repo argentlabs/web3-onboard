@@ -1,3 +1,7 @@
+<script>
+  import walletModal from '$lib/assets/connect-modal.svg'
+</script>
+
 # Core
 
 This is the core package that contains all of the UI and logic to be able to seamlessly connect user's wallets to your app and track the state of those wallets. Onboard no longer contains any wallet specific code, so wallets need to be passed in upon initialization.
@@ -22,6 +26,8 @@ npm install @web3-onboard/core
 
   </TabPanel>
 </Tabs>
+
+#### All Wallet Modules
 
 If you would like to support all wallets, then you can install all of the wallet modules:
 
@@ -50,6 +56,7 @@ npm install @web3-onboard/coinbase @web3-onboard/fortmatic @web3-onboard/gnosis 
   :::
 
 ## Quick start
+
 Checkout our full library of quick start examples for connecting and interacting with EVM based wallets
 
 - **[React](https://github.com/blocknative/react-demo)**
@@ -83,29 +90,45 @@ type InitOptions {
    * Object mapping for W3O components with the key being the component and the value the DOM element to mount the component to. This element must be available at time of package script execution.
    */
   containerElements?: Partial<ContainerElements>
-    /**
+  /**
    * Custom or predefined theme for Web3Onboard i.e. default, dark, Custom, etc.
    */
   theme?: Theme
+  /**
+   * Defaults to False
+   * If set to true the Inter font will not be imported and
+   * instead the default 'sans-serif' font will be used
+   * To define the font used see `--w3o-font-family` prop within
+   * the Theme initialization object or set as css variable
+   */
+  disableFontDownload?: boolean
 }
 
 ```
 
-### Options
+---
 
-**`wallets`**
+#### wallets
+
 An array of wallet modules that you would like to be presented to the user to select from when connecting a wallet. A wallet module is an abstraction that allows for easy interaction without needing to know the specifics of how that wallet works and are separate packages that can be included.
+These modules are separate @web3-onboard packages such as `@web3-onboard/injected-wallets` or `@web3-onboard/ledger`.
+For a full list click [here](#all-wallet-modules).
 
-**`chains`**
+---
+
+#### chains
+
 An array of Chains that your app supports:
 
 ```ts
 type Chain = {
   id: ChainId // hex encoded string, eg '0x1' for Ethereum Mainnet
   namespace?: 'evm' // string indicating chain namespace. Defaults to 'evm' but will allow other chain namespaces in the future
-  rpcUrl: string // used for network requests
-  label: string // used for display, eg Ethereum Mainnet
-  token: TokenSymbol // the native token symbol, eg ETH, BNB, MATIC
+  // PLEASE NOTE: Some wallets require an rpcUrl, label, and token for actions such as adding a new chain.
+  // It is recommended to include rpcUrl, label, and token for full functionality.
+  rpcUrl?: string // Recommended to include. Used for network requests.
+  label?: string // Recommended to include. Used for display, eg Ethereum Mainnet.
+  token?: TokenSymbol // Recommended to include. The native token symbol, eg ETH, BNB, MATIC.
   color?: string // the color used to represent the chain and will be used as a background for the icon
   icon?: string // the icon to represent the chain
   publicRpcUrl?: string // an optional public RPC used when adding a new chain config to the wallet
@@ -113,10 +136,13 @@ type Chain = {
 }
 ```
 
-**`appMetadata`**
+---
+
+#### appMetadata
+
 An object that defines your app:
 
-```ts
+```ts copy
 type AppMetadata = {
   // app name
   name: string
@@ -155,11 +181,19 @@ type RecommendedInjectedWallets = {
 }
 ```
 
-**`connectModal`**
+---
+
+#### connect
+
 An object that allows for customizing the connect modal layout and behavior
 
-```typescript
+<img src="{walletModal}" alt="Web3-Onboard connect wallet modal"/>
+
+```typescript copy
 type ConnectModalOptions = {
+  /**
+   * Display the connect modal sidebar - only applies to desktop views
+   */
   showSidebar?: boolean
   /**
    * Disabled close of the connect modal with background click and
@@ -167,15 +201,39 @@ type ConnectModalOptions = {
    * Defaults to false
    */
   disableClose?: boolean
-  /**If set to true, the last connected wallet will store in local storage.
-   * Then on init, onboard will try to reconnect to that wallet with
-   * no modals displayed
+  /**
+   * If set to true, the most recently connected wallet will store in
+   * local storage. Then on init, onboard will try to reconnect to
+   * that wallet with no modals displayed
    */
-  autoConnectLastWallet?: boolean // defaults to false
+  autoConnectLastWallet?: boolean
+  /**
+   * If set to true, all previously connected wallets will store in
+   * local storage. Then on init, onboard will try to reconnect to
+   * each wallet with no modals displayed
+   */
+  autoConnectAllPreviousWallet?: boolean
+  /**
+   * Customize the link for the `I don't have a wallet` flow shown on the
+   * select wallet modal.
+   * Defaults to `https://ethereum.org/en/wallets/find-wallet/#main-content`
+   */
+  iDontHaveAWalletLink?: string
+  /**
+   * Define support for Unstoppable Domains resolutions
+   * after a user connects. Similar to ens, uns can be used for users who
+   * have minted an Unstoppable Domain and associated it with their wallet.
+   * ENS resolution takes precedent over UNS
+   * Defaults to false
+   */
+  disableUDResolution?: boolean
 }
 ```
 
-**`i18n`**
+---
+
+#### i18n
+
 An object that defines the display text for different locales. Can also be used to override the default text. To override the default text, pass in an object for the `en` locale.
 
 ```typescript
@@ -186,13 +244,26 @@ type i18nOptions = Record<Locale, i18n>
 To see a list of all of the text values that can be internationalized or replaced, check out the [default en file](https://github.com/blocknative/web3-onboard/blob/develop/packages/core/src/i18n/en.json).
 Onboard is using the [ICU syntax](https://formatjs.io/docs/core-concepts/icu-syntax/) for formatting under the hood.
 
-**`theme`**
-A string or an object that defines the color theme web3-onboard will render the components.
-Define a custom or predefined theme for Web3Onboard using either: 
-  * BuiltInThemes: ['default', 'dark', 'light', 'system']
-  * ThemingMap object to create a totally custom theme
+---
 
-Note: `system` will default to the theme set by the users system.
+#### theme
+
+A string or an object that defines the color theme web3-onboard will render the components.
+
+Define a custom or predefined theme for Web3Onboard using either:
+
+###### **Native themes available**
+
+|           |                                                                                   |
+| --------- | --------------------------------------------------------------------------------- |
+| 'default' | a mix of light and dark elements found throughout the web3-onboard components     |
+| 'dark'    | modern look - easy on the eyes in low-light settings                              |
+| 'light'   | bright and clean look - easier to read in bright environments                     |
+| 'system'  | automatically switch between 'dark' & 'light' based on the user's system settings |
+
+###### **ThemingMap object** - Create a totally custom theme see below for the typing.
+
+For a complete walkthrough on customizing your theme checkout our [theming documentation](/docs/getting-started/theming)
 
 ```typescript
 export type Theme = ThemingMap | BuiltInThemes | 'system'
@@ -201,6 +272,7 @@ export type BuiltInThemes = 'default' | 'dark' | 'light'
 
 export type ThemingMap = {
   '--w3o-background-color'?: string
+  '--w3o-font-family'?: string
   '--w3o-foreground-color'?: string
   '--w3o-text-color'?: string
   '--w3o-border-color'?: string
@@ -208,15 +280,30 @@ export type ThemingMap = {
   '--w3o-border-radius'?: string
 }
 ```
-:::admonition type="experimental"
+
+:::admonition type=tip
 Interested in seeing how web3-onboard will look on your site?
 
-[Try out our theming tool](/theming-tool)
+[Try out our theming tool](/theming-tool) or our in depth theming walkthrough [here](/docs/getting-started/theming)
 
 It will allow you to customize the look and feel of web3-onboard, try different themes or create your own, and preview how web3-onboard will look on your site by entering a URL or adding a screenshot.
 :::
 
-**`accountCenter`**
+---
+
+#### disableFontDownload
+
+If set to `true` the default `Inter` font will not be imported and instead the web based `sans-serif` font will be used if a font is not defined through the `Theme` or exposed css variable.
+To define the font use `--w3o-font-family` prop within the `Theme` initialization object or set as a css variable.
+
+```typescript
+type disableFontDownload = boolean // defaults to false
+```
+
+---
+
+#### accountCenter
+
 An object that defines whether the account center UI (default and minimal) is enabled and its position on the screen. Currently the account center is enabled for both desktop and mobile devices.
 
 ```ts
@@ -241,7 +328,10 @@ export type AccountCenterOptions = {
 type AccountCenterPosition = 'topRight' | 'bottomRight' | 'bottomLeft' | 'topLeft'
 ```
 
-**`containerElements`**
+---
+
+#### containerElements
+
 An object mapping for W3O components with the key being the DOM element to mount the specified component to.
 This defines the DOM container element for svelte to attach the component.
 
@@ -250,12 +340,25 @@ For an example please see containerElement usage [here](https://github.com/block
 
 ```typescript
 type ContainerElements = {
-  // when using the accountCenter with a container el the accountCenter position properties are ignored
-  accountCenter?: string
+  /** When attaching the Connect Modal to a container el be aware that
+   * the modal was styled to be mounted through the app to the html body
+   * and will respond to screen width rather than container width
+   * This is specifically apparent on mobile so please test thoroughly
+   * Also consider that other DOM elements(specifically Notifications and
+   * Account Center) will also append to this DOM el if enabled and their
+   * own containerEl are not defined
+   */
+  connectModal?: string
+  /** when using the accountCenter with a container el the accountCenter
+   * position properties are ignored
+   */
 }
 ```
 
-**`notify`**
+---
+
+#### notify
+
 Notify provides by default transaction notifications for all connected wallets on the current blockchain. When switching chains the previous chain listeners remain active for 60 seconds to allow capture and report of remaining transactions that may be in flight.
 By default transaction notifications are captured if a DAppID is provided in the Onboard config along with the Account Center being enabled.
 An object that defines whether transaction notifications will display (defaults to true if an API key is provided). This object contains an `enabled` flag prop and an optional `transactionHandler` which is a callback that can disable or allow customizations of notifications.
@@ -347,7 +450,7 @@ export interface UpdateNotification {
 
 Putting it all together, here is an example initialization with the injected wallet modules:
 
-```ts
+```ts copy
 import Onboard from '@web3-onboard/core'
 import injectedModule from '@web3-onboard/injected-wallets'
 
@@ -367,6 +470,12 @@ const onboard = Onboard({
       token: 'ETH',
       label: 'Goerli',
       rpcUrl: `https://goerli.infura.io/v3/${INFURA_ID}`
+    },
+    {
+      id: 11155111,
+      token: 'ETH',
+      label: 'Sepolia',
+      rpcUrl: 'https://rpc.sepolia.org/'
     },
     {
       id: '0x38',
@@ -391,6 +500,12 @@ const onboard = Onboard({
       token: 'ARB-ETH',
       label: 'Arbitrum',
       rpcUrl: 'https://rpc.ankr.com/arbitrum'
+    },
+    {
+      id: 84531,
+      token: 'ETH',
+      label: 'Base Goerli',
+      rpcUrl: 'https://goerli.base.org'
     }
   ],
   appMetadata: {
@@ -503,7 +618,7 @@ const onboard = Onboard({
 
 A wallet can be disconnected, which will cleanup any background operations the wallet may be doing and will also remove it from the Onboard `wallets` array:
 
-```javascript
+```javascript copy
 // disconnect the first wallet in the wallets array
 const [primaryWallet] = onboard.state.get().wallets
 await onboard.disconnectWallet({ label: primaryWallet.label })
@@ -593,7 +708,7 @@ type WalletModule {
 
 The current state of Onboard can be accessed at any time using the `state.get()` method:
 
-```javascript
+```javascript copy
 const currentState = onboard.state.get()
 ```
 
@@ -603,7 +718,7 @@ State can also be subscribed to using the `state.select()` method. The `select` 
 
 To subscribe to all state updates, call the `select` method with no arguments:
 
-```javascript
+```javascript copy
 const state = onboard.state.select()
 const { unsubscribe } = state.subscribe((update) => console.log('state update: ', update))
 
@@ -613,7 +728,7 @@ const { unsubscribe } = state.subscribe((update) => console.log('state update: '
 
 Specific top level slices of state can be subscribed to. For example you may want to just subscribe to receive updates to the `wallets` array only:
 
-```javascript
+```javascript copy
 const wallets = onboard.state.select('wallets')
 const { unsubscribe } = wallets.subscribe((update) => console.log('wallets update: ', update))
 
@@ -625,7 +740,10 @@ unsubscribe()
 
 A limited subset of internal actions are exposed to update the Onboard state.
 
-**`setWalletModules`**
+---
+
+#### **setWalletModules**
+
 For updating the wallets that are displayed in the wallet selection modal. This can be used if the wallets you want to support is conditional on another user action within your app. The `setWalletModules` action is called with an updated array of wallets (the same wallets that are passed in on initialization)
 
 ```typescript
@@ -661,7 +779,52 @@ const onboard = Onboard({
 onboard.state.actions.setWalletModules([ledger, trezor])
 ```
 
-**`updateBalances`**
+---
+
+#### **updateTheme**
+
+An exposed method for updating the [theme](#theme) of web3-onboard. The function accepts `Theme` types (see below)
+
+The function also accepts a custom built `ThemingMap` object that contains all or some of the theming variables
+
+Example:
+
+```typescript copy
+import Onboard from '@web3-onboard/core'
+import injectedModule from '@web3-onboard/injected-wallets'
+
+const injected = injectedModule()
+
+const onboard = Onboard({
+  theme: 'dark',
+  wallets: [injected],
+  chains: [
+    {
+      id: '0x1',
+      token: 'ETH',
+      label: 'Ethereum Mainnet',
+      rpcUrl: `https://mainnet.infura.io/v3/${INFURA_KEY}`
+    }
+  ]
+})
+
+// after initialization you may want to change the theme based on a theme switch within the dapp
+onboard.state.actions.updateTheme('light')
+// or
+const customTheme: ThemingMap = {
+  '--w3o-background-color': '#f0f0f0',
+  '--w3o-foreground-color': '#333',
+  '--w3o-text-color': '#fff',
+  '--w3o-border-color': '#ccc',
+  '--w3o-action-color': '#007bff'
+}
+onboard.state.actions.updateTheme(customTheme)
+```
+
+---
+
+#### **updateBalances**
+
 You may decide to get updated balances for connected wallets after a user action by calling the `updatedBalances` function, which expects a conditional array of addresses:
 
 ```javascript
@@ -670,17 +833,23 @@ onboard.state.actions.updateBalances(['0xfdadfadsadsadsadasdsa']) // update bala
 onboard.state.actions.updateBalances(['0xfdadfadsadsadsadasdsa', '0xfdsafdsfdsfdsfds']) // update balance for two addresses
 ```
 
-**`setLocale`**
+---
+
+#### **setLocale**
+
 Onboard will automatically detect the browser locale at runtime, but if you would like to update it manually you can call the `setLocale` function:
 
 ```javascript
 onboard.state.actions.setLocal('fr_FR')
 ```
 
-**`updateNotify`**
+---
+
+#### **updateNotify**
+
 If you need to update your notify configuration after initialization, you can do that by calling the `updateNotify` function:
 
-```javascript
+```javascript copy
 onboard.state.actions.updateNotify({
   desktop: {
     enabled: true,
@@ -711,12 +880,15 @@ onboard.state.actions.updateNotify({
 })
 ```
 
-**`customNotification`**
+---
+
+#### **customNotification**
+
 Notify can be used to deliver custom DApp notifications by passing a `CustomNotification` object to the `customNotification` action. This will return an `UpdateNotification` type.
 This `UpdateNotification` will return an `update` function that can be passed a new `CustomNotification` to update the existing notification.
 The `customNotification` method also returns a `dismiss` method that is called without any parameters to dismiss the notification.
 
-```typescript
+```typescript copy
 const { update, dismiss } = onboard.state.actions.customNotification({
   type: 'pending',
   message: 'This is a custom DApp pending notification to use however you want',
@@ -734,7 +906,10 @@ setTimeout(
 )
 ```
 
-**`preflightNotifications`**
+---
+
+#### **preflightNotifications**
+
 Notify can be used to deliver standard notifications along with preflight information by passing a `PreflightNotificationsOptions` object to the `preflightNotifications` action. This will return a promise that resolves to the transaction hash (if `sendTransaction` resolves the transaction hash and is successful), the internal notification id (if no `sendTransaction` function is provided) or return nothing if an error occurs or `sendTransaction` is not provided or doesn't resolve to a string.
 
 Preflight event types include
@@ -762,8 +937,10 @@ interface PreflightNotificationsOptions {
 }
 ```
 
-```typescript
+```typescript copy
 const balanceValue = Object.values(balance)[0]
+// if using ethers v6 this is:
+// ethersProvider = new ethers.BrowserProvider(wallet.provider, 'any')
 const ethersProvider = new ethers.providers.Web3Provider(provider, 'any')
 
 const signer = ethersProvider.getSigner()
@@ -791,7 +968,10 @@ const transactionHash = await onboard.state.actions.preflightNotifications({
 console.log(transactionHash)
 ```
 
-**`updateAccountCenter`**
+---
+
+#### **updateAccountCenter**
+
 If you need to update your Account Center configuration after initialization, you can call the `updateAccountCenter` function with the new configuration
 
 ```typescript
@@ -802,7 +982,10 @@ onboard.state.actions.updateAccountCenter({
 })
 ```
 
-**`setPrimaryWallet`**
+---
+
+#### **setPrimaryWallet**
+
 The primary wallet (first in the list of connected wallets) and primary account (first in the list of connected accounts for a wallet) can be set by using the `setPrimaryWallet` function. The wallet that is set needs to be passed in for the first parameter and if you would like to set the primary account, the address of that account also needs to be passed in:
 
 ```typescript
@@ -818,18 +1001,21 @@ onboard.state.actions.setPrimaryWallet(wallets[1], wallets[1].accounts[2].addres
 
 When initializing Onboard you define a list of chains/networks that your app supports. If you would like to prompt the user to switch to one of those chains, you can use the `setChain` method on an initialized instance of Onboard:
 
-```typescript
+```typescript copy
 type SetChain = (options: SetChainOptions) => Promise<boolean>
 type SetChainOptions = {
   chainId: string // hex encoded string
   chainNamespace?: 'evm' // defaults to 'evm' (currently the only valid value, but will add more in future updates)
   wallet?: string // the wallet.label of the wallet to set chain
+  rpcUrl?: string // if chain was instantiated without rpcUrl, include here. Used for network requests
+  token?: string // if chain was instantiated without token, include here. Used for display, eg Ethereum Mainnet
+  label?: string // if chain was instantiated without label, include here. The native token symbol, eg ETH, BNB, MATIC
 }
 
 const success = await onboard.setChain({ chainId: '0x89' })
 ```
 
-The `setChain` methods takes an options object with a `chainId` property hex encoded string for the chain id to switch to. The chain id must be one of the chains that Onboard was initialized with. If the wallet supports programatically adding and switching the chain, then the user will be prompted to do so, if not, then a modal will be displayed indicating to the user that they need to switch chains to continue. The `setChain` method returns a promise that resolves when either the user has confirmed the chain switch, or has dismissed the modal and resolves with a boolean indicating if the switch network was successful or not. The `setChain` method will by default switch the first wallet (the most recently connected) in the `wallets` array. A specific wallet can be targeted by passing in the `wallet.label` in the options object as the `wallet` parameter.
+The `setChain` methods takes an options object with a `chainId` property hex encoded string for the chain id to switch to. The chain id must be one of the chains that Onboard was initialized with. If the wallet supports programatically adding and switching the chain, then the user will be prompted to do so, if not, then a modal will be displayed indicating to the user that they need to switch chains to continue. The `setChain` method returns a promise that resolves when either the user has confirmed the chain switch, or has dismissed the modal and resolves with a boolean indicating if the switch network was successful or not. The `setChain` method will by default switch the first wallet (the most recently connected) in the `wallets` array. A specific wallet can be targeted by passing in the `wallet.label` in the options object as the `wallet` parameter. If a chain was instantiated without an rpcUrl, token, or label, add these options for wallets that require this information for adding a new chain.
 
 ## Custom Styling
 
@@ -936,9 +1122,7 @@ The Onboard styles can be customized via [CSS variables](https://developer.mozil
   --onboard-action-required-modal-background
 
   /* FONTS */
-  --onboard-font-family-normal: Sofia Pro;
-  --onboard-font-family-semibold: Sofia Pro Semibold;
-  --onboard-font-family-light: Sofia Pro Light;
+  --onboard-font-family-normal:  Inter, sans-serif;
 
   --onboard-font-size-1: 3rem;
   --onboard-font-size-2: 2.25rem;
@@ -1006,8 +1190,7 @@ The Onboard styles can be customized via [CSS variables](https://developer.mozil
   --account-select-modal-danger-500: #ff4f4f;
 
   /* FONTS */
-  --account-select-modal-font-family-normal: Sofia Pro;
-  --account-select-modal-font-family-light: Sofia Pro Light;
+  --account-select-modal-font-family-normal:  Inter, sans-serif;
   --account-select-modal-font-size-5: 1rem;
   --account-select-modal-font-size-7: .75rem;
   --account-select-modal-font-line-height-1: 24px;
@@ -1052,7 +1235,7 @@ Node built-ins are automatically bundled in v4 so that portion is handled automa
 
 **babel.config.js**
 
-```javascript
+```javascript copy
 module.exports = (api) => {
   api.cache(true)
   const plugins = [
@@ -1085,7 +1268,7 @@ You'll need to add some dev dependencies with the following command:
 
 Then add the following to your `webpack.config.js` file:
 
-```javascript
+```javascript copy
 const webpack = require('webpack')
 
 module.exports = {
@@ -1132,7 +1315,7 @@ Add the following dev dependencies:
 
 `yarn add rollup-plugin-polyfill-node webpack-bundle-analyzer assert buffer crypto-browserify stream-http https-browserify os-browserify process stream-browserify util path-browserify -D`
 
-```javascript
+```javascript copy
 const webpack = require('webpack')
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
 const path = require('path')
@@ -1248,7 +1431,122 @@ const config = {
 export default config
 ```
 
+### SvelteKit + Vite
+
+Checkout a boilerplate example (here)[https://github.com/blocknative/web3-onboard/tree/develop/examples/with-sveltekit]
+
+Add the following dev dependencies:
+
+`yarn add rollup-plugin-polyfill-node -D`
+
+Then add the following to your `svelte.config.js` file:
+
+```javascript
+import adapter from '@sveltejs/adapter-auto'
+import preprocess from 'svelte-preprocess'
+
+/** @type {import('@sveltejs/kit').Config} */
+const config = {
+  // Consult https://github.com/sveltejs/svelte-preprocess
+  // for more information about preprocessors
+  preprocess: preprocess(),
+
+  kit: {
+    adapter: adapter()
+  }
+}
+
+export default config
+```
+
+Then add the following to your `vite.config.js` file:
+
+```javascript
+import { sveltekit } from '@sveltejs/kit/vite'
+import inject from '@rollup/plugin-inject'
+
+import type { UserConfig } from 'vite'
+import nodePolyfills from 'rollup-plugin-polyfill-node'
+
+const MODE = process.env.NODE_ENV
+const development = MODE === 'development'
+
+/** @type {import('@sveltejs/kit').Config} */
+
+const config: UserConfig = {
+  plugins: [
+    sveltekit(),
+    development &&
+      nodePolyfills({
+        include: ['node_modules/**/*.js', new RegExp('node_modules/.vite/.*js'), 'http', 'crypto']
+      })
+  ],
+  resolve: {
+    alias: {
+      crypto: 'crypto-browserify',
+      stream: 'stream-browserify',
+      assert: 'assert'
+    }
+  },
+  build: {
+    rollupOptions: {
+      external: ['@web3-onboard/*'],
+      plugins: [
+        nodePolyfills({ include: ['crypto', 'http'] }),
+        inject({ Buffer: ['Buffer', 'Buffer'] })
+      ]
+    },
+    commonjsOptions: {
+      transformMixedEsModules: true
+    }
+  },
+  optimizeDeps: {
+    exclude: ['@ethersproject/hash', 'wrtc', 'http'],
+    include: [
+      '@web3-onboard/core',
+      '@web3-onboard/gas',
+      '@web3-onboard/sequence',
+      'js-sha3',
+      '@ethersproject/bignumber'
+    ],
+    esbuildOptions: {
+      // Node.js global to browser globalThis
+      define: {
+        global: 'globalThis'
+      }
+    }
+  },
+  define: {
+    global: 'window'
+  }
+}
+
+export default config
+```
+
+If an error presents around `window` being undefined remove the `define.global` block.
+Add this to your `app.html`
+
+```html
+<script>
+  var global = global || window
+</script>
+```
+
+##### Buffer polyfill
+
+It seems some component or dependency requires Node's Buffer. To polyfill this, the simplest way I could find was to install the buffer package and include the following in web3-onboard.ts:
+
+```javascript
+import { Buffer } from 'buffer'
+globalThis.Buffer = Buffer
+```
+
+See [this github issue](https://github.com/blocknative/web3-onboard/issues/1568#issuecomment-1463963462) for further troubleshooting
+
 ### Vite
+
+Checkout a boilerplate example for Vite-React (here)[https://github.com/blocknative/web3-onboard/tree/develop/examples/with-vite-react]
 
 Add the following dev dependencies:
 
@@ -1267,9 +1565,7 @@ export default {
   plugins: [
     development &&
       nodePolyfills({
-        include: ['node_modules/**/*.js', new RegExp('node_modules/.vite/.*js')],
-        http: true,
-        crypto: true
+        include: ['node_modules/**/*.js', new RegExp('node_modules/.vite/.*js'), 'http', 'crypto']
       })
   ],
   resolve: {
@@ -1281,11 +1577,34 @@ export default {
   },
   build: {
     rollupOptions: {
-      plugins: [nodePolyfills({ crypto: true, http: true })]
+      external: ['@web3-onboard/*'],
+      plugins: [
+        nodePolyfills({ include: ['crypto', 'http'] }),
+        inject({ Buffer: ['Buffer', 'Buffer'] })
+      ]
     },
     commonjsOptions: {
       transformMixedEsModules: true
     }
+  },
+  optimizeDeps: {
+    exclude: ['@ethersproject/hash', 'wrtc', 'http'],
+    include: [
+      '@web3-onboard/core',
+      '@web3-onboard/gas',
+      '@web3-onboard/sequence',
+      'js-sha3',
+      '@ethersproject/bignumber'
+    ],
+    esbuildOptions: {
+      // Node.js global to browser globalThis
+      define: {
+        global: 'globalThis'
+      }
+    }
+  },
+  define: {
+    global: 'window'
   }
 }
 ```
@@ -1302,8 +1621,23 @@ build: {
 
 ### Next.js
 
+Checkout a boilerplate example for NextJS v13 (here)[https://github.com/blocknative/web3-onboard/tree/develop/examples/with-nextjs-13]
+
+Checkout a boilerplate example for NextJS (here)[https://github.com/blocknative/web3-onboard/tree/develop/examples/with-nextjs]
+
 :::admonition type=note
 
 If you are seeing an error during builds when dynamically importing Web3Onboard in a NextJS v13 project, try upgrading to to the Canary beta release of NextJS where this issue is fixed.
 
-  :::
+:::
+
+## Package Managers
+
+### npm and yarn
+
+Web3-Onboard will work out of the box with `npm` and `yarn` support.
+
+### pnpm
+
+We have had issues reported when using `pnpm` as the package manager when working with web3-onboard.
+As we work to understand this new manager more and the issues around it we recommend using `npm` or `yarn` for now.
