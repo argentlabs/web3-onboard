@@ -15,7 +15,14 @@ import Onboard from '@web3-onboard/core'
 import argentModule from '@web3-onboard/argent'
 
 // initialize the module
-const argent = argentModule()
+const argent = argentModule({
+  projectId: '00000000000000000000000000000000', // optional, in case your dapp has high traffic
+  metadata: {
+    name: 'Web3 Onboard Demo',
+    description: 'Demo dapp of the  Web3 Onboard repo.',
+  }
+})
+
 
 const onboard = Onboard({
   // ... other Onboard options

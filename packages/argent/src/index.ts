@@ -1,6 +1,7 @@
 import type { WalletInit } from '@web3-onboard/common'
+import type { IArgentLoginOptions } from '@argent/login'
 
-function argent(): WalletInit {
+function argent(walletConnect: IArgentLoginOptions["walletConnect"]): WalletInit {
   return () => ({
     label: 'Argent',
     getIcon: async () =>
@@ -14,6 +15,7 @@ function argent(): WalletInit {
       const ethereumProvider = await getEthereumProvider({
         chainId: parseInt(chain.id),
         rpcUrl: chain.rpcUrl,
+        walletConnect,
       })
       await ethereumProvider.enable()
 

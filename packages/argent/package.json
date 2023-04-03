@@ -1,6 +1,6 @@
 {
   "name": "@web3-onboard/argent",
-  "version": "2.2.3",
+  "version": "2.2.4",
   "description": "Argent Wallet module for web3-onboard",
   "repository": "blocknative/web3-onboard",
   "module": "dist/index.js",

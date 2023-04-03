@@ -101,7 +101,14 @@
     // walletUnavailableMessage: wallet => `Oops ${wallet.label} is unavailable!`
   })
 
-  const argent = argentModule()
+  const argent = argentModule({
+    projectId: 'f6bd6e2911b56f5ac3bc8b2d0e2d7ad5',
+    metadata: {
+      name: 'Web3 Onboard Demo',
+      description: 'Demo dapp of the  Web3 Onboard repo.',
+    }
+  })
+
   const coinbaseWallet = coinbaseModule()
 
   const walletConnect = walletConnectModule({
